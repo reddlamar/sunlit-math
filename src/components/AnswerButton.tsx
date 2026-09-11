@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
+import { fontFamily } from '../theme/tokens';
 
 type AnswerButtonProps = {
   value: number;
@@ -46,6 +47,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: '#FFFFFF',
   },
 });

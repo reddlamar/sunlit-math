@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Animated, Pressable, StyleProp, ViewStyle, type PressableProps } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { playTapSound } from '../audio/sounds';
 
 type AnimatedPressableProps = PressableProps & {
   scaleTo?: number;
@@ -35,6 +36,7 @@ export function AnimatedPressable({
         onPressIn={(event) => {
           animateTo(scaleTo);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          playTapSound();
           onPressIn?.(event);
         }}
         onPressOut={(event) => {

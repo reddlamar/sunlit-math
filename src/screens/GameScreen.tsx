@@ -7,7 +7,7 @@ import { TimerBar } from '../components/TimerBar';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
 import { useGameEngine } from '../game/useGameEngine';
-import { choiceColors, light, operationColors } from '../theme/tokens';
+import { choiceColors, fontFamily, light, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
@@ -163,6 +163,7 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
   },
   controls: {
     flexDirection: 'row',
@@ -198,6 +199,7 @@ const styles = StyleSheet.create({
   pausedTitle: {
     fontSize: 28,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: light.textPrimary,
     textAlign: 'center',
     marginBottom: 24,
@@ -205,6 +207,7 @@ const styles = StyleSheet.create({
   question: {
     fontSize: 44,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: light.textPrimary,
     marginBottom: 24,
   },
@@ -226,12 +229,14 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 24,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: light.textPrimary,
     marginBottom: 8,
   },
   summaryScore: {
     fontSize: 40,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     marginBottom: 32,
   },
   primaryButtonWrapper: {
@@ -247,10 +252,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   secondaryButtonLabel: {
     color: light.accent,
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: fontFamily.regular,
   },
 });

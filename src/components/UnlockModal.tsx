@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { usePurchase } from '../purchases/PurchaseContext';
-import { light } from '../theme/tokens';
+import { fontFamily, light } from '../theme/tokens';
 
 type UnlockModalProps = {
   visible: boolean;
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: light.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 15,
     color: light.textSecondary,
+    fontFamily: fontFamily.regular,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -114,11 +116,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
   secondaryLabel: {
     color: light.accent,
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: fontFamily.regular,
     marginBottom: 16,
   },
   closeButton: {
@@ -128,5 +132,6 @@ const styles = StyleSheet.create({
     color: light.textSecondary,
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: fontFamily.regular,
   },
 });

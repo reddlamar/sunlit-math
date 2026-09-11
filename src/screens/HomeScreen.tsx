@@ -7,7 +7,7 @@ import { UnlockModal } from '../components/UnlockModal';
 import { getTopScores } from '../storage/scoresRepository';
 import { isOperationLocked } from '../purchases/entitlements';
 import { usePurchase } from '../purchases/PurchaseContext';
-import { light, operationColors } from '../theme/tokens';
+import { fontFamily, light, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
   topScoreLabel: {
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: fontFamily.regular,
     color: light.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -157,6 +158,7 @@ const styles = StyleSheet.create({
   topScoreValue: {
     fontSize: 18,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: light.textPrimary,
     marginTop: 2,
   },

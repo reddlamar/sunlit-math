@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { onCorrectAnswer, onWrongAnswer } from './scoring';
 import { generatorForOperation } from './problemGenerators';
 import { useGameTimer } from './useGameTimer';
+import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import type { Difficulty, GameState, GameStatus, Operation, Problem } from '../types/game';
 
 const GAME_DURATION_MS = 60000;
@@ -46,8 +47,14 @@ export function useGameEngine(
       if (status !== 'playing' || !problem) {
         return;
       }
-      setGameState((prev) => (value === problem.answer ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
+      const isCorrect = value === problem.answer;
+      setGameState((prev) => (isCorrect ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
       setProblem(generator(difficulty));
+      if (isCorrect) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
     },
     [status, problem, generator, difficulty]
   );

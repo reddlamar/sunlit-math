@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
-import { light } from '../theme/tokens';
+import { fontFamily, light } from '../theme/tokens';
 import { addScore } from '../storage/scoresRepository';
 import type { Operation, ScoreEntry } from '../types/game';
 
@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: light.textPrimary,
     marginBottom: 16,
     textAlign: 'center',
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     fontSize: 16,
+    fontFamily: fontFamily.regular,
     marginBottom: 16,
     color: light.textPrimary,
   },
@@ -139,5 +141,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
   },
 });

@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { getTopScores } from '../storage/scoresRepository';
-import { light, operationColors } from '../theme/tokens';
+import { fontFamily, light, operationColors } from '../theme/tokens';
 import type { LeaderboardScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
 
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: light.textPrimary,
   },
   homeIcon: {
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     fontSize: 16,
   },
   emptyState: {
@@ -144,6 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: light.textSecondary,
     fontWeight: '600',
+    fontFamily: fontFamily.regular,
   },
   row: {
     flexDirection: 'row',
@@ -163,10 +166,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fontFamily.bold,
     color: light.textPrimary,
   },
   score: {
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
   },
 });

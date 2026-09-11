@@ -1,5 +1,11 @@
 import type { Operation } from '../types/game';
 
+export const fontFamily = {
+  regular: 'Baloo2_500Medium',
+  bold: 'Baloo2_700Bold',
+  extraBold: 'Baloo2_800ExtraBold',
+};
+
 export const operationColors: Record<Operation, string> = {
   addition: '#3DBE6C',
   subtraction: '#FF9F45',

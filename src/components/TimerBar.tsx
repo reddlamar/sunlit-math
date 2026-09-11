@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { light } from '../theme/tokens';
+import { fontFamily, light } from '../theme/tokens';
 
 type TimerBarProps = {
   timeLeft: number;
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 22,
     fontWeight: '800',
+    fontFamily: fontFamily.extraBold,
     color: '#22B8CF',
   },
 });

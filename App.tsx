@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { PurchaseProvider } from './src/purchases/PurchaseContext';
@@ -14,6 +15,11 @@ const SPLASH_MIN_DURATION_MS = 1000;
 
 export default function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [fontsLoaded] = useFonts({
+    Baloo2_500Medium,
+    Baloo2_700Bold,
+    Baloo2_800ExtraBold,
+  });
 
   const onSplashLayout = useCallback(() => {
     // onLayout only guarantees layout is done, not that this view has actually
@@ -37,7 +43,7 @@ export default function App() {
         <RootNavigator />
         <StatusBar style="auto" />
       </PurchaseProvider>
-      {isSplashVisible && (
+      {(isSplashVisible || !fontsLoaded) && (
         <View style={styles.splash} onLayout={onSplashLayout}>
           <Image
             source={require('./assets/splash-icon.png')}
