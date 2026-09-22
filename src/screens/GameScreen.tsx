@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
@@ -6,29 +6,36 @@ import { AnswerButton } from '../components/AnswerButton';
 import { TimerBar } from '../components/TimerBar';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
+import { GetReadyModal } from '../components/GetReadyModal';
 import { useGameEngine } from '../game/useGameEngine';
-import { choiceColors, fontFamily, light, operationColors } from '../theme/tokens';
+import { useSettings } from '../settings/SettingsContext';
+import { choiceColors, fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
 
 export function GameScreen({ navigation, route }: GameScreenProps) {
   const { operation } = route.params;
-  const engine = useGameEngine(operation);
+  const { colors, difficulty } = useSettings();
+  const engine = useGameEngine(operation, difficulty);
   const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
+  const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
 
-  useEffect(() => {
-    engine.start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handlePlayAgain = () => {
-    setSavedEntry(null);
+  const handleRoundReady = () => {
+    setIsGetReadyVisible(false);
     engine.start();
   };
 
+  const handlePlayAgain = () => {
+    setSavedEntry(null);
+    setIsGetReadyVisible(true);
+  };
+
   const handleRestart = () => {
-    engine.start();
+    // Freezes the old round's timer behind the modal so it can't tick to zero
+    // while the player is looking at the Get Ready screen; no-op if not playing.
+    engine.pause();
+    setIsGetReadyVisible(true);
   };
 
   const handleViewLeaderboard = () => {
@@ -37,10 +44,12 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
 
   if (savedEntry) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.summary}>
           <Text style={styles.summaryEmoji}>🎉</Text>
-          <Text style={styles.summaryTitle}>Nice work, {savedEntry.name}!</Text>
+          <Text style={[styles.summaryTitle, { color: colors.textPrimary }]}>
+            Nice work, {savedEntry.name}!
+          </Text>
           <Text style={[styles.summaryScore, { color: operationColors[operation] }]}>
             {savedEntry.score} points
           </Text>
@@ -54,7 +63,9 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             <Text style={styles.primaryButtonLabel}>Play Again</Text>
           </AnimatedPressable>
           <AnimatedPressable accessibilityRole="button" onPress={handleViewLeaderboard}>
-            <Text style={styles.secondaryButtonLabel}>View Leaderboard</Text>
+            <Text style={[styles.secondaryButtonLabel, { color: colors.accent }]}>
+              View Leaderboard
+            </Text>
           </AnimatedPressable>
         </View>
       </SafeAreaView>
@@ -62,7 +73,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.topBar}>
         <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />
         <View style={styles.statsRow}>
@@ -103,7 +114,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
           {engine.status === 'paused' ? (
             <View>
               <Text style={styles.pausedEmoji}>⏸</Text>
-              <Text style={styles.pausedTitle}>Paused</Text>
+              <Text style={[styles.pausedTitle, { color: colors.textPrimary }]}>Paused</Text>
               <AnimatedPressable
                 testID="resume-button"
                 accessibilityRole="button"
@@ -116,7 +127,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             </View>
           ) : (
             <>
-              <Text testID="problem-question" style={styles.question}>
+              <Text testID="problem-question" style={[styles.question, { color: colors.textPrimary }]}>
                 {engine.problem.question}
               </Text>
               <View style={styles.choices}>
@@ -135,12 +146,16 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
         </View>
       )}
 
+      {/* engine.status stays 'ended' until the next round's engine.start() actually
+          runs (see handleRoundReady), so without the isGetReadyVisible check this
+          would still be visible for the entire Get Ready screen after Play Again. */}
       <NameEntryModal
-        visible={engine.status === 'ended'}
+        visible={engine.status === 'ended' && !isGetReadyVisible}
         score={engine.score}
         operation={operation}
         onSaved={setSavedEntry}
       />
+      <GetReadyModal visible={isGetReadyVisible} onReady={handleRoundReady} />
     </SafeAreaView>
   );
 }
@@ -148,7 +163,6 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: light.background,
   },
   topBar: {
     paddingHorizontal: 20,
@@ -200,7 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: light.textPrimary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -208,7 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 44,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: light.textPrimary,
     marginBottom: 24,
   },
   choices: {
@@ -230,7 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: light.textPrimary,
     marginBottom: 8,
   },
   summaryScore: {
@@ -255,7 +266,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
   },
   secondaryButtonLabel: {
-    color: light.accent,
     fontSize: 16,
     fontWeight: '600',
     fontFamily: fontFamily.regular,

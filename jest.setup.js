@@ -10,4 +10,5 @@ jest.mock('expo-audio', () => ({
     seekTo: jest.fn().mockResolvedValue(undefined),
     remove: jest.fn(),
   })),
+  preload: jest.fn().mockResolvedValue(undefined),
 }));

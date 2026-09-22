@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
-import { fontFamily, light } from '../theme/tokens';
+import { useSettings } from '../settings/SettingsContext';
+import { fontFamily } from '../theme/tokens';
 import { playStreakSound } from '../audio/sounds';
 
 const LIT_THRESHOLD = 3;
@@ -11,6 +12,7 @@ type StreakIndicatorProps = {
 };
 
 export function StreakIndicator({ streak }: StreakIndicatorProps) {
+  const { colors } = useSettings();
   const isLit = streak >= LIT_THRESHOLD;
   const pop = useRef(new Animated.Value(1)).current;
   const previousStreak = useRef(streak);
@@ -33,7 +35,10 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
   }, [streak, pop]);
 
   return (
-    <View style={[styles.container, isLit && styles.containerLit]}>
+    <View
+      testID="streak-container"
+      style={[styles.container, isLit && { backgroundColor: colors.streakSoft }]}
+    >
       <Animated.Text
         testID="streak-flame"
         accessibilityState={{ selected: isLit }}
@@ -41,7 +46,9 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
       >
         🔥
       </Animated.Text>
-      <Text style={[styles.count, isLit && styles.countLit]}>{streak}</Text>
+      <Text style={[styles.count, { color: isLit ? colors.streak : colors.textPrimary }]}>
+        {streak}
+      </Text>
     </View>
   );
 }
@@ -53,9 +60,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 16,
-  },
-  containerLit: {
-    backgroundColor: '#FFF1E6',
   },
   flame: {
     fontSize: 20,
@@ -70,9 +74,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-    color: light.textPrimary,
-  },
-  countLit: {
-    color: '#FF9F45',
   },
 });

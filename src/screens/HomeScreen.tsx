@@ -7,7 +7,8 @@ import { UnlockModal } from '../components/UnlockModal';
 import { getTopScores } from '../storage/scoresRepository';
 import { isOperationLocked } from '../purchases/entitlements';
 import { usePurchase } from '../purchases/PurchaseContext';
-import { fontFamily, light, operationColors } from '../theme/tokens';
+import { useSettings } from '../settings/SettingsContext';
+import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
@@ -23,6 +24,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const [topScore, setTopScore] = useState<ScoreEntry | null>(null);
   const [isUnlockModalVisible, setIsUnlockModalVisible] = useState(false);
   const { isUnlocked } = usePurchase();
+  const { colors } = useSettings();
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +47,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Image
           source={require('../../assets/home-header-banner.png')}
@@ -78,20 +80,23 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           accessibilityLabel="View top score on the leaderboard"
           style={[
             styles.topScoreCard,
-            { borderColor: topScore ? operationColors[topScore.operation] : light.border },
+            { backgroundColor: colors.surface },
+            { borderColor: topScore ? operationColors[topScore.operation] : colors.border },
           ]}
           onPress={() => navigation.navigate('Leaderboard', {})}
         >
           <Text style={styles.topScoreIcon}>🏆</Text>
           {topScore ? (
             <View>
-              <Text style={styles.topScoreLabel}>Top Score</Text>
+              <Text style={[styles.topScoreLabel, { color: colors.textSecondary }]}>Top Score</Text>
               <Text style={[styles.topScoreValue, { color: operationColors[topScore.operation] }]}>
                 {topScore.name} · {topScore.score}
               </Text>
             </View>
           ) : (
-            <Text style={styles.topScoreLabel}>No scores yet — be the first!</Text>
+            <Text style={[styles.topScoreLabel, { color: colors.textSecondary }]}>
+              No scores yet — be the first!
+            </Text>
           )}
         </AnimatedPressable>
       </View>
@@ -106,7 +111,6 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: light.background,
   },
   header: {
     flexDirection: 'row',
@@ -139,7 +143,6 @@ const styles = StyleSheet.create({
     marginTop: 32,
     padding: 18,
     borderRadius: 24,
-    backgroundColor: light.surface,
     borderWidth: 2,
     ...cardShadow({ elevation: 3, opacity: 0.12, radius: 6, offsetHeight: 4 }),
   },
@@ -151,7 +154,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
-    color: light.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -159,7 +161,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-    color: light.textPrimary,
     marginTop: 2,
   },
 });

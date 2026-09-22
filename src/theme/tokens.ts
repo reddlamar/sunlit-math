@@ -24,6 +24,9 @@ export type ColorTokens = {
   error: string;
   accent: string;
   border: string;
+  timer: string;
+  streak: string;
+  streakSoft: string;
 };
 
 export const light: ColorTokens = {
@@ -35,4 +38,23 @@ export const light: ColorTokens = {
   error: '#E4572E',
   accent: '#5B4FCF',
   border: '#E6E1D6',
+  timer: '#22B8CF',
+  streak: '#FF9F45',
+  streakSoft: '#FFF1E6',
+};
+
+// Cozy bedtime palette, not a muted dev-tool dark mode — warm plum background,
+// high-contrast text, and brighter accent colors so they still read against it.
+export const dark: ColorTokens = {
+  background: '#1F1440',
+  surface: '#2E2158',
+  textPrimary: '#FFF8EF',
+  textSecondary: '#C9B8F5',
+  success: '#5EE39B',
+  error: '#FF7A59',
+  accent: '#8B7CFF',
+  border: '#4A3B7A',
+  timer: '#3FD4EC',
+  streak: '#FFB870',
+  streakSoft: '#4A2E1F',
 };
