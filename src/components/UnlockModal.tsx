@@ -1,8 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
+import { ModalCard } from './ModalCard';
 import { usePurchase } from '../purchases/PurchaseContext';
-import { fontFamily, light } from '../theme/tokens';
+import { useSettings } from '../settings/SettingsContext';
+import { fontFamily } from '../theme/tokens';
 
 type UnlockModalProps = {
   visible: boolean;
@@ -11,6 +13,7 @@ type UnlockModalProps = {
 
 export function UnlockModal({ visible, onClose }: UnlockModalProps) {
   const { isUnlocked, isPurchasing, price, lastError, purchase, restore } = usePurchase();
+  const { colors } = useSettings();
 
   React.useEffect(() => {
     if (visible && isUnlocked) {
@@ -19,65 +22,51 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
   }, [visible, isUnlocked, onClose]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <Text style={styles.emoji}>🔓</Text>
-          <Text style={styles.title}>Unlock All Operations</Text>
-          <Text style={styles.body}>
-            Get subtraction, multiplication, and division for a one-time payment
-            {price ? ` of ${price}` : ''}.
-          </Text>
-          {lastError && <Text style={styles.errorText}>{lastError}</Text>}
-          <AnimatedPressable
-            testID="unlock-purchase-button"
-            accessibilityRole="button"
-            disabled={isPurchasing}
-            style={[styles.primaryButton, { opacity: isPurchasing ? 0.7 : 1 }]}
-            onPress={purchase}
-          >
-            {isPurchasing ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.primaryLabel}>{price ? `Unlock for ${price}` : 'Unlock'}</Text>
-            )}
-          </AnimatedPressable>
-          <AnimatedPressable
-            testID="unlock-restore-button"
-            accessibilityRole="button"
-            disabled={isPurchasing}
-            onPress={restore}
-          >
-            <Text style={styles.secondaryLabel}>Restore Purchase</Text>
-          </AnimatedPressable>
-          <AnimatedPressable
-            testID="unlock-close-button"
-            accessibilityRole="button"
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <Text style={styles.closeLabel}>Maybe Later</Text>
-          </AnimatedPressable>
-        </View>
-      </View>
-    </Modal>
+    <ModalCard visible={visible} onRequestClose={onClose} centered>
+      <Text style={styles.emoji}>🔓</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>Unlock All Operations</Text>
+      <Text style={[styles.body, { color: colors.textSecondary }]}>
+        Get subtraction, multiplication, and division for a one-time payment
+        {price ? ` of ${price}` : ''}.
+      </Text>
+      {lastError && <Text style={styles.errorText}>{lastError}</Text>}
+      <AnimatedPressable
+        testID="unlock-purchase-button"
+        accessibilityRole="button"
+        disabled={isPurchasing}
+        style={[
+          styles.primaryButton,
+          { backgroundColor: colors.accent, opacity: isPurchasing ? 0.7 : 1 },
+        ]}
+        onPress={purchase}
+      >
+        {isPurchasing ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.primaryLabel}>{price ? `Unlock for ${price}` : 'Unlock'}</Text>
+        )}
+      </AnimatedPressable>
+      <AnimatedPressable
+        testID="unlock-restore-button"
+        accessibilityRole="button"
+        disabled={isPurchasing}
+        onPress={restore}
+      >
+        <Text style={[styles.secondaryLabel, { color: colors.accent }]}>Restore Purchase</Text>
+      </AnimatedPressable>
+      <AnimatedPressable
+        testID="unlock-close-button"
+        accessibilityRole="button"
+        style={styles.closeButton}
+        onPress={onClose}
+      >
+        <Text style={[styles.closeLabel, { color: colors.textSecondary }]}>Maybe Later</Text>
+      </AnimatedPressable>
+    </ModalCard>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    width: '85%',
-    backgroundColor: light.surface,
-    borderRadius: 28,
-    padding: 24,
-    alignItems: 'center',
-  },
   emoji: {
     fontSize: 40,
     marginBottom: 8,
@@ -86,13 +75,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: light.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   body: {
     fontSize: 15,
-    color: light.textSecondary,
     fontFamily: fontFamily.regular,
     textAlign: 'center',
     marginBottom: 20,
@@ -105,7 +92,6 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     width: '100%',
-    backgroundColor: light.accent,
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -119,7 +105,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
   },
   secondaryLabel: {
-    color: light.accent,
     fontSize: 14,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
@@ -129,7 +114,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   closeLabel: {
-    color: light.textSecondary,
     fontSize: 14,
     fontWeight: '600',
     fontFamily: fontFamily.regular,

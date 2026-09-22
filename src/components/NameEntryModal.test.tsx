@@ -1,9 +1,14 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { NameEntryModal } from './NameEntryModal';
+import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
 
 jest.mock('../storage/scoresRepository');
+
+function renderNameEntryModal(ui: React.ReactElement) {
+  return render(<SettingsProvider>{ui}</SettingsProvider>);
+}
 
 describe('NameEntryModal', () => {
   beforeEach(() => {
@@ -12,7 +17,7 @@ describe('NameEntryModal', () => {
   });
 
   it("greets the player with their score", async () => {
-    const { getByText } = await render(
+    const { getByText } = await renderNameEntryModal(
       <NameEntryModal visible score={7} operation="addition" onSaved={jest.fn()} />
     );
     expect(getByText(/You scored 7/)).toBeTruthy();
@@ -20,7 +25,7 @@ describe('NameEntryModal', () => {
 
   it('saves the entered name and calls onSaved with the new entry', async () => {
     const onSaved = jest.fn();
-    const { getByPlaceholderText, getByText } = await render(
+    const { getByPlaceholderText, getByText } = await renderNameEntryModal(
       <NameEntryModal visible score={7} operation="addition" onSaved={onSaved} />
     );
 
@@ -37,7 +42,7 @@ describe('NameEntryModal', () => {
 
   it('shows a required error and does not save when the name is left blank', async () => {
     const onSaved = jest.fn();
-    const { getByText, queryByText } = await render(
+    const { getByText, queryByText } = await renderNameEntryModal(
       <NameEntryModal visible score={3} operation="division" onSaved={onSaved} />
     );
 
@@ -51,7 +56,7 @@ describe('NameEntryModal', () => {
   });
 
   it('shows a required error when the name is only whitespace', async () => {
-    const { getByPlaceholderText, getByText } = await render(
+    const { getByPlaceholderText, getByText } = await renderNameEntryModal(
       <NameEntryModal visible score={3} operation="division" onSaved={jest.fn()} />
     );
 
@@ -63,7 +68,7 @@ describe('NameEntryModal', () => {
   });
 
   it('clears the required error once the player starts typing a name', async () => {
-    const { getByPlaceholderText, getByText, queryByText } = await render(
+    const { getByPlaceholderText, getByText, queryByText } = await renderNameEntryModal(
       <NameEntryModal visible score={3} operation="division" onSaved={jest.fn()} />
     );
 
@@ -82,7 +87,7 @@ describe('NameEntryModal', () => {
       })
     );
     const onSaved = jest.fn();
-    const { getByPlaceholderText, getByTestId } = await render(
+    const { getByPlaceholderText, getByTestId } = await renderNameEntryModal(
       <NameEntryModal visible score={7} operation="addition" onSaved={onSaved} />
     );
 
@@ -107,7 +112,7 @@ describe('NameEntryModal', () => {
 
   it('truncates names longer than 20 characters', async () => {
     const onSaved = jest.fn();
-    const { getByPlaceholderText, getByText } = await render(
+    const { getByPlaceholderText, getByText } = await renderNameEntryModal(
       <NameEntryModal visible score={3} operation="division" onSaved={onSaved} />
     );
 

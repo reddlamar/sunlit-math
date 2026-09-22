@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { LeaderboardScreen } from './LeaderboardScreen';
+import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
 import type { LeaderboardScreenProps } from '../navigation/types';
 
@@ -14,6 +15,17 @@ function makeNavigation() {
   return { navigate: jest.fn() } as unknown as LeaderboardScreenProps['navigation'];
 }
 
+function renderLeaderboard(
+  navigation: LeaderboardScreenProps['navigation'],
+  route: LeaderboardScreenProps['route']
+) {
+  return render(
+    <SettingsProvider>
+      <LeaderboardScreen navigation={navigation} route={route} />
+    </SettingsProvider>
+  );
+}
+
 describe('LeaderboardScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,20 +35,19 @@ describe('LeaderboardScreen', () => {
     jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
     const navigation = makeNavigation();
 
-    const { getByLabelText } = await render(
-      <LeaderboardScreen navigation={navigation} route={makeRoute()} />
-    );
+    const { getByLabelText } = await renderLeaderboard(navigation, makeRoute());
 
     await fireEvent.press(getByLabelText('Go to home screen'));
 
-    expect(navigation.navigate).toHaveBeenCalledWith('Home');
+    expect(navigation.navigate).toHaveBeenCalledWith('MainTabs', { screen: 'Home' });
   });
 
   it('shows an empty state when there are no scores yet', async () => {
     jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
 
-    const { findByText } = await render(
-      <LeaderboardScreen navigation={{} as LeaderboardScreenProps['navigation']} route={makeRoute()} />
+    const { findByText } = await renderLeaderboard(
+      {} as LeaderboardScreenProps['navigation'],
+      makeRoute()
     );
 
     expect(await findByText(/No scores yet/)).toBeTruthy();
@@ -48,8 +59,9 @@ describe('LeaderboardScreen', () => {
       { id: '2', name: 'Lin', score: 15, operation: 'addition', createdAt: 2 },
     ]);
 
-    const { findByText } = await render(
-      <LeaderboardScreen navigation={{} as LeaderboardScreenProps['navigation']} route={makeRoute()} />
+    const { findByText } = await renderLeaderboard(
+      {} as LeaderboardScreenProps['navigation'],
+      makeRoute()
     );
 
     expect(await findByText('Ada')).toBeTruthy();
@@ -60,8 +72,9 @@ describe('LeaderboardScreen', () => {
   it('refetches filtered by operation when a filter tab is tapped', async () => {
     jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
 
-    const { findByText, getByText } = await render(
-      <LeaderboardScreen navigation={{} as LeaderboardScreenProps['navigation']} route={makeRoute()} />
+    const { findByText, getByText } = await renderLeaderboard(
+      {} as LeaderboardScreenProps['navigation'],
+      makeRoute()
     );
     await findByText(/No scores yet/);
 

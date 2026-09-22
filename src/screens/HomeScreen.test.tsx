@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { HomeScreen } from './HomeScreen';
 import { PurchaseProvider } from '../purchases/PurchaseContext';
+import { SettingsProvider } from '../settings/SettingsContext';
 import type { HomeScreenProps } from '../navigation/types';
 
 function makeNavigation() {
@@ -10,9 +11,11 @@ function makeNavigation() {
 
 function renderHomeScreen(navigation = makeNavigation()) {
   return render(
-    <PurchaseProvider>
-      <HomeScreen navigation={navigation} route={{} as HomeScreenProps['route']} />
-    </PurchaseProvider>
+    <SettingsProvider>
+      <PurchaseProvider>
+        <HomeScreen navigation={navigation} route={{} as HomeScreenProps['route']} />
+      </PurchaseProvider>
+    </SettingsProvider>
   );
 }
 

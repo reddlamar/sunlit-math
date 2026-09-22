@@ -6,6 +6,7 @@ import { useFonts, Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold } from 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { PurchaseProvider } from './src/purchases/PurchaseContext';
+import { SettingsProvider, useSettings } from './src/settings/SettingsContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,10 +40,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <PurchaseProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </PurchaseProvider>
+      <SettingsProvider>
+        <PurchaseProvider>
+          <RootNavigator />
+          <ThemedStatusBar />
+        </PurchaseProvider>
+      </SettingsProvider>
       {(isSplashVisible || !fontsLoaded) && (
         <View style={styles.splash} onLayout={onSplashLayout}>
           <Image
@@ -54,6 +57,11 @@ export default function App() {
       )}
     </SafeAreaProvider>
   );
+}
+
+function ThemedStatusBar() {
+  const { theme } = useSettings();
+  return <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />;
 }
 
 const styles = StyleSheet.create({

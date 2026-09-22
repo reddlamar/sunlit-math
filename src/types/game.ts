@@ -25,3 +25,11 @@ export type ScoreEntry = {
 };
 
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'ended';
+
+export type Theme = 'light' | 'dark';
+
+export type Settings = {
+  muted: boolean;
+  theme: Theme;
+  difficulty: Difficulty;
+};

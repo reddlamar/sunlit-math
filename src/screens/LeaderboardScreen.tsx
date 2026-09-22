@@ -3,23 +3,25 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { getTopScores } from '../storage/scoresRepository';
-import { fontFamily, light, operationColors } from '../theme/tokens';
+import { useSettings } from '../settings/SettingsContext';
+import { fontFamily, operationColors } from '../theme/tokens';
 import type { LeaderboardScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
-
-const FILTERS: { operation?: Operation; label: string; color: string }[] = [
-  { operation: undefined, label: 'All', color: light.accent },
-  { operation: 'addition', label: '+', color: operationColors.addition },
-  { operation: 'subtraction', label: '−', color: operationColors.subtraction },
-  { operation: 'multiplication', label: '×', color: operationColors.multiplication },
-  { operation: 'division', label: '÷', color: operationColors.division },
-];
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps) {
   const [operation, setOperation] = useState<Operation | undefined>(route.params?.operation);
   const [scores, setScores] = useState<ScoreEntry[]>([]);
+  const { colors } = useSettings();
+
+  const filters: { operation?: Operation; label: string; color: string }[] = [
+    { operation: undefined, label: 'All', color: colors.accent },
+    { operation: 'addition', label: '+', color: operationColors.addition },
+    { operation: 'subtraction', label: '−', color: operationColors.subtraction },
+    { operation: 'multiplication', label: '×', color: operationColors.multiplication },
+    { operation: 'division', label: '÷', color: operationColors.division },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -34,20 +36,20 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
   }, [operation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>🏆 Leaderboard</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>🏆 Leaderboard</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go to home screen"
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
         >
           <Text style={styles.homeIcon}>🏠</Text>
         </Pressable>
       </View>
 
       <View style={styles.filterRow}>
-        {FILTERS.map(({ operation: filterOp, label, color }) => {
+        {filters.map(({ operation: filterOp, label, color }) => {
           const active = operation === filterOp;
           return (
             <AnimatedPressable
@@ -72,16 +74,23 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
       {scores.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🎯</Text>
-          <Text style={styles.emptyText}>No scores yet — be the first!</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            No scores yet — be the first!
+          </Text>
         </View>
       ) : (
         <FlatList
           data={scores}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
-            <View style={[styles.row, { borderColor: operationColors[item.operation] }]}>
+            <View
+              style={[
+                styles.row,
+                { backgroundColor: colors.surface, borderColor: operationColors[item.operation] },
+              ]}
+            >
               <Text style={styles.rank}>{MEDALS[index] ?? `${index + 1}.`}</Text>
-              <Text style={styles.name}>{item.name}</Text>
+              <Text style={[styles.name, { color: colors.textPrimary }]}>{item.name}</Text>
               <Text style={[styles.score, { color: operationColors[item.operation] }]}>
                 {item.score}
               </Text>
@@ -96,7 +105,6 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: light.background,
     paddingHorizontal: 20,
     paddingTop: 12,
   },
@@ -110,7 +118,6 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: light.textPrimary,
   },
   homeIcon: {
     fontSize: 28,
@@ -144,14 +151,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: light.textSecondary,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: light.surface,
     borderRadius: 18,
     borderWidth: 2,
     paddingVertical: 12,
@@ -167,7 +172,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-    color: light.textPrimary,
   },
   score: {
     fontSize: 18,
