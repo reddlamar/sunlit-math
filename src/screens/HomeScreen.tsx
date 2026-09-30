@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { OperationButton } from '../components/OperationButton';
@@ -26,17 +27,21 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const { isUnlocked } = usePurchase();
   const { colors } = useSettings();
 
-  useEffect(() => {
-    let cancelled = false;
-    getTopScores(1).then(([entry]) => {
-      if (!cancelled) {
-        setTopScore(entry ?? null);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Home stays mounted under the Game screen, so reload on every focus rather
+  // than on mount; otherwise a score saved during a game never shows up here.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      getTopScores(1).then(([entry]) => {
+        if (!cancelled) {
+          setTopScore(entry ?? null);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const handleSelectOperation = (operation: Operation) => {
     if (isOperationLocked(operation, isUnlocked)) {

@@ -1,21 +1,39 @@
 import React from 'react';
+import { Text } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { render, fireEvent } from '@testing-library/react-native';
 import { HomeScreen } from './HomeScreen';
 import { PurchaseProvider } from '../purchases/PurchaseContext';
 import { SettingsProvider } from '../settings/SettingsContext';
-import type { HomeScreenProps } from '../navigation/types';
+import { addScore } from '../storage/scoresRepository';
+import type { GameScreenProps, HomeScreenProps, RootStackParamList } from '../navigation/types';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function makeNavigation() {
   return { navigate: jest.fn() } as unknown as HomeScreenProps['navigation'];
 }
 
-function renderHomeScreen(navigation = makeNavigation()) {
+// HomeScreen reloads its data on focus, which needs a real navigation container.
+function renderInNavigator(screens: React.ReactNode) {
   return render(
     <SettingsProvider>
       <PurchaseProvider>
-        <HomeScreen navigation={navigation} route={{} as HomeScreenProps['route']} />
+        <NavigationContainer>
+          <Stack.Navigator>{screens}</Stack.Navigator>
+        </NavigationContainer>
       </PurchaseProvider>
     </SettingsProvider>
+  );
+}
+
+function renderHomeScreen(navigation = makeNavigation()) {
+  return renderInNavigator(
+    <Stack.Screen name="MainTabs">
+      {() => <HomeScreen navigation={navigation} route={{} as HomeScreenProps['route']} />}
+    </Stack.Screen>
   );
 }
 
@@ -54,5 +72,40 @@ describe('HomeScreen', () => {
     await fireEvent.press(getByLabelText('View leaderboard'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('Leaderboard', {});
+  });
+});
+
+describe('HomeScreen top score', () => {
+  function GameStub({ navigation }: GameScreenProps) {
+    return (
+      <Text
+        onPress={async () => {
+          await addScore({ id: '1', name: 'Ada', score: 12, operation: 'addition', createdAt: 1 });
+          navigation.goBack();
+        }}
+      >
+        finish game
+      </Text>
+    );
+  }
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  it('refreshes the top score when returning to Home from a game', async () => {
+    const { getByText, findByText } = await renderInNavigator(
+      <>
+        <Stack.Screen name="MainTabs" component={HomeScreen as never} />
+        <Stack.Screen name="Game" component={GameStub} />
+      </>
+    );
+
+    expect(await findByText(/No scores yet/)).toBeTruthy();
+
+    await fireEvent.press(getByText('+'));
+    await fireEvent.press(await findByText('finish game'));
+
+    expect(await findByText('Ada · 12')).toBeTruthy();
   });
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { AnswerButton } from '../components/AnswerButton';
@@ -7,6 +7,7 @@ import { TimerBar } from '../components/TimerBar';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
 import { GetReadyModal } from '../components/GetReadyModal';
+import { useShake } from '../components/useShake';
 import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
 import { choiceColors, fontFamily, operationColors } from '../theme/tokens';
@@ -20,6 +21,15 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const engine = useGameEngine(operation, difficulty);
   const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
+  const { shake, shakeStyle } = useShake();
+
+  // The pressed button is usually gone after a wrong answer (the next problem has
+  // new choices), so the whole grid shakes instead.
+  const handleAnswer = (value: number) => {
+    if (engine.submitAnswer(value) === 'wrong') {
+      shake();
+    }
+  };
 
   const handleRoundReady = () => {
     setIsGetReadyVisible(false);
@@ -130,17 +140,17 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
               <Text testID="problem-question" style={[styles.question, { color: colors.textPrimary }]}>
                 {engine.problem.question}
               </Text>
-              <View style={styles.choices}>
+              <Animated.View testID="answer-grid" style={[styles.choices, shakeStyle]}>
                 {engine.problem.choices.map((choice, index) => (
                   <AnswerButton
                     key={choice}
                     value={choice}
                     color={choiceColors[index % choiceColors.length]}
-                    onPress={engine.submitAnswer}
+                    onPress={handleAnswer}
                     disabled={engine.status !== 'playing'}
                   />
                 ))}
-              </View>
+              </Animated.View>
             </>
           )}
         </View>
@@ -155,7 +165,11 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
         operation={operation}
         onSaved={setSavedEntry}
       />
-      <GetReadyModal visible={isGetReadyVisible} onReady={handleRoundReady} />
+      <GetReadyModal
+        visible={isGetReadyVisible}
+        onReady={handleRoundReady}
+        onExit={() => navigation.goBack()}
+      />
     </SafeAreaView>
   );
 }

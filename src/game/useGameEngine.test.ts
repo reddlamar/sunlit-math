@@ -148,4 +148,25 @@ describe('useGameEngine', () => {
     expect(result.current.streak).toBe(0);
     expect(result.current.status).toBe('playing');
   });
+
+  it('reports whether each submitted answer was correct, wrong, or ignored', async () => {
+    const { result } = await renderHook(() => useGameEngine('addition'));
+
+    expect(result.current.submitAnswer(0)).toBe('ignored');
+
+    await act(async () => {
+      result.current.start();
+    });
+
+    let outcome: ReturnType<typeof result.current.submitAnswer> | undefined;
+    await act(async () => {
+      outcome = result.current.submitAnswer(result.current.problem!.answer + 1000);
+    });
+    expect(outcome).toBe('wrong');
+
+    await act(async () => {
+      outcome = result.current.submitAnswer(result.current.problem!.answer);
+    });
+    expect(outcome).toBe('correct');
+  });
 });

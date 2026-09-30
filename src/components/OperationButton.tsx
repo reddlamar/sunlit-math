@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
+import { useShake } from './useShake';
 import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { Operation } from '../types/game';
@@ -20,25 +21,12 @@ export function OperationButton({
   locked = false,
   onPress,
 }: OperationButtonProps) {
-  const [shake] = useState(() => new Animated.Value(0));
-
-  const triggerShake = () => {
-    shake.setValue(0);
-    Animated.sequence([
-      Animated.timing(shake, { toValue: 1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: -1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: 1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: -1, duration: 45, useNativeDriver: true }),
-      Animated.timing(shake, { toValue: 0, duration: 45, useNativeDriver: true }),
-    ]).start();
-  };
+  const { shake, shakeStyle } = useShake();
 
   const handlePress = () => {
-    triggerShake();
+    shake();
     onPress(operation);
   };
-
-  const translateX = shake.interpolate({ inputRange: [-1, 1], outputRange: [-9, 9] });
 
   return (
     <AnimatedPressable
@@ -52,7 +40,7 @@ export function OperationButton({
       ]}
       onPress={handlePress}
     >
-      <Animated.View style={[styles.content, { transform: [{ translateX }] }]}>
+      <Animated.View style={[styles.content, shakeStyle]}>
         <Text style={styles.symbol}>{symbol}</Text>
         <Text style={styles.label}>{label}</Text>
       </Animated.View>
