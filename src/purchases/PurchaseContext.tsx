@@ -22,12 +22,12 @@ function ownsUnlock(purchases: Purchase[]): boolean {
 }
 
 export function PurchaseProvider({ children }: PropsWithChildren) {
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [hasStoredUnlock, setHasStoredUnlock] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
   const markUnlocked = async () => {
-    setIsUnlocked(true);
+    setHasStoredUnlock(true);
     await AsyncStorage.setItem(STORAGE_KEY, 'true');
   };
 
@@ -57,7 +57,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (value === 'true') {
-        setIsUnlocked(true);
+        setHasStoredUnlock(true);
       }
     });
   }, []);
@@ -76,12 +76,14 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
+  const ownsPurchase = ownsUnlock(availablePurchases);
+  const isUnlocked = hasStoredUnlock || ownsPurchase;
+
   useEffect(() => {
-    if (ownsUnlock(availablePurchases)) {
-      markUnlocked();
+    if (ownsPurchase) {
+      AsyncStorage.setItem(STORAGE_KEY, 'true');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availablePurchases]);
+  }, [ownsPurchase]);
 
   const product = products.find((item) => item.id === UNLOCK_ALL_OPERATIONS_SKU);
 

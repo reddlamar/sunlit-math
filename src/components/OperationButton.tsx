@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { fontFamily, operationColors } from '../theme/tokens';
@@ -20,7 +20,7 @@ export function OperationButton({
   locked = false,
   onPress,
 }: OperationButtonProps) {
-  const shake = useRef(new Animated.Value(0)).current;
+  const [shake] = useState(() => new Animated.Value(0));
 
   const triggerShake = () => {
     shake.setValue(0);

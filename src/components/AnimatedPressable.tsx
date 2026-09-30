@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { Animated, Pressable, StyleProp, ViewStyle, type PressableProps } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { playTapSound } from '../audio/sounds';
@@ -17,7 +17,7 @@ export function AnimatedPressable({
   children,
   ...rest
 }: AnimatedPressableProps) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [scale] = useState(() => new Animated.Value(1));
 
   const animateTo = (toValue: number) => {
     Animated.spring(scale, {

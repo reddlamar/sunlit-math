@@ -16,7 +16,9 @@ export function useGameTimer(durationMs: number, onExpire: () => void): UseGameT
   const [isRunning, setIsRunning] = useState(false);
   const endTimeRef = useRef<number | null>(null);
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
     if (!isRunning) {
