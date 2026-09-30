@@ -1,9 +1,15 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIAP } from 'expo-iap';
 import { PurchaseProvider, usePurchase } from './PurchaseContext';
 import { UNLOCK_ALL_OPERATIONS_SKU } from './entitlements';
+import { hasPaidDownload } from './paidDownload';
+
+jest.mock('./paidDownload', () => ({ hasPaidDownload: jest.fn().mockResolvedValue(false) }));
+
+const mockHasPaidDownload = hasPaidDownload as jest.Mock;
 
 const mockUseIAP = useIAP as jest.Mock;
 
@@ -21,8 +27,10 @@ function Probe() {
 }
 
 describe('PurchaseProvider', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
     mockUseIAP.mockReset();
+    mockHasPaidDownload.mockReset().mockResolvedValue(false);
   });
 
   it('starts locked when there is no stored entitlement and the store is disconnected', async () => {
@@ -65,6 +73,50 @@ describe('PurchaseProvider', () => {
     );
 
     expect(await findByText('unlocked')).toBeTruthy();
+  });
+
+  it('unlocks users who paid to download the app before it became free', async () => {
+    mockHasPaidDownload.mockResolvedValue(true);
+    mockUseIAP.mockReturnValue({
+      connected: true,
+      products: [],
+      availablePurchases: [],
+      finishTransaction: jest.fn(),
+      getAvailablePurchases: jest.fn(),
+      fetchProducts: jest.fn(),
+      requestPurchase: jest.fn(),
+      restorePurchases: jest.fn(),
+    });
+
+    const { findByText } = await render(
+      <PurchaseProvider>
+        <Probe />
+      </PurchaseProvider>
+    );
+
+    expect(await findByText('unlocked')).toBeTruthy();
+  });
+
+  it('stays locked for free downloads with no purchase', async () => {
+    mockUseIAP.mockReturnValue({
+      connected: true,
+      products: [],
+      availablePurchases: [],
+      finishTransaction: jest.fn(),
+      getAvailablePurchases: jest.fn(),
+      fetchProducts: jest.fn(),
+      requestPurchase: jest.fn(),
+      restorePurchases: jest.fn(),
+    });
+
+    const { findByText } = await render(
+      <PurchaseProvider>
+        <Probe />
+      </PurchaseProvider>
+    );
+
+    await waitFor(() => expect(mockHasPaidDownload).toHaveBeenCalled());
+    expect(await findByText('locked')).toBeTruthy();
   });
 
   it('unlocks once onPurchaseSuccess fires for the unlock SKU, and finishes the transaction', async () => {

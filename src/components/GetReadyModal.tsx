@@ -16,23 +16,28 @@ type GetReadyModalProps = {
 export function GetReadyModal({ visible, onReady }: GetReadyModalProps) {
   const { colors } = useSettings();
   const [phase, setPhase] = useState<'intro' | 'countdown'>('intro');
-  const countdown = useGameTimer(COUNTDOWN_MS, onReady);
+  const [wasVisible, setWasVisible] = useState(visible);
+  const { timeLeft, start, reset } = useGameTimer(COUNTDOWN_MS, onReady);
+
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setPhase('intro');
+    }
+  }
 
   useEffect(() => {
     if (visible) {
-      setPhase('intro');
-      countdown.reset();
+      reset();
     }
-    // countdown.reset is stable (useGameTimer memoizes it on COUNTDOWN_MS,
-    // a constant), so depending on it directly here is safe and exhaustive.
-  }, [visible, countdown.reset]);
+  }, [visible, reset]);
 
   const handleStart = () => {
     setPhase('countdown');
-    countdown.start();
+    start();
   };
 
-  const secondsLeft = Math.ceil(countdown.timeLeft / 1000);
+  const secondsLeft = Math.ceil(timeLeft / 1000);
 
   return (
     <ModalCard visible={visible} centered transparentCard={phase === 'countdown'}>

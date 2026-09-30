@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm run test:coverage -- --ci
+
+  eas-build-check:
+    # Verifies the app config and native dependencies are healthy and that the iOS
+    # JS bundle builds, without queuing (or paying for) a real EAS build.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Expo Doctor
+        run: npx expo-doctor
+      - name: Bundle iOS
+        run: npx expo export --platform ios --output-dir "$RUNNER_TEMP/export"

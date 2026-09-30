@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
@@ -14,7 +14,7 @@ type StreakIndicatorProps = {
 export function StreakIndicator({ streak }: StreakIndicatorProps) {
   const { colors } = useSettings();
   const isLit = streak >= LIT_THRESHOLD;
-  const pop = useRef(new Animated.Value(1)).current;
+  const [pop] = useState(() => new Animated.Value(1));
   const previousStreak = useRef(streak);
 
   useEffect(() => {
