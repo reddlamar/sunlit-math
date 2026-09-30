@@ -1,4 +1,4 @@
-import type { Difficulty, Operation, Problem, ProblemGenerator } from '../types/game';
+import type { Difficulty, Operation, ProblemGenerator } from '../types/game';
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
