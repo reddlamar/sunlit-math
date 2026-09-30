@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, type PropsWithCh
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIAP, type Purchase } from 'expo-iap';
 import { UNLOCK_ALL_OPERATIONS_SKU } from './entitlements';
+import { hasPaidDownload } from './paidDownload';
 
 const STORAGE_KEY = 'math60_unlocked_v1';
 
@@ -67,6 +68,11 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
     }
     fetchProducts({ skus: [UNLOCK_ALL_OPERATIONS_SKU], type: 'in-app' });
     getAvailablePurchases();
+    hasPaidDownload().then((paid) => {
+      if (paid) {
+        markUnlocked();
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 

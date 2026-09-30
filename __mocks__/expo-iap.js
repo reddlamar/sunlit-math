@@ -11,4 +11,6 @@ const useIAP = jest.fn(() => ({
   restorePurchases: jest.fn().mockResolvedValue(undefined),
 }));
 
-module.exports = { useIAP };
+const getAppTransactionIOS = jest.fn().mockResolvedValue(null);
+
+module.exports = { useIAP, getAppTransactionIOS };
