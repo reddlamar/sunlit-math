@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { getAppTransactionIOS } from 'expo-iap';
-import { isPaidDownloadBuild, hasPaidDownload } from './paidDownload';
+import { isPaidDownloadBuild, hasPaidDownload, FIRST_FREE_BUILD } from './paidDownload';
 
 const mockGetAppTransaction = getAppTransactionIOS as jest.Mock;
 
@@ -66,5 +66,22 @@ describe('hasPaidDownload', () => {
     Platform.OS = 'android';
     expect(await hasPaidDownload(10)).toBe(false);
     expect(mockGetAppTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('production cutoff', () => {
+  beforeEach(() => {
+    Platform.OS = 'ios';
+  });
+
+  it('treats build 6 as the first free build', () => {
+    expect(FIRST_FREE_BUILD).toBe(6);
+  });
+
+  it('grandfathers builds 3-5 (paid or live at the price change) but not 6+', async () => {
+    for (const [build, expected] of [['3', true], ['4', true], ['5', true], ['6', false], ['7', false]] as const) {
+      mockGetAppTransaction.mockResolvedValue({ originalAppVersion: build });
+      expect(await hasPaidDownload()).toBe(expected);
+    }
   });
 });

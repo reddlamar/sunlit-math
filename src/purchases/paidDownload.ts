@@ -5,9 +5,9 @@ import { getAppTransactionIOS } from 'expo-iap';
  * iOS build number (CFBundleVersion) of the first release that was free to download.
  * Users whose original download is an earlier build paid for the app, so they keep
  * every operation unlocked. Set this to the build number that shipped after the App
- * Store price changed to free. While null, no one is grandfathered.
+ * Store price changed to free. Build 6 is the first release after the price changed to free (while build 5 was live).
  */
-export const FIRST_FREE_BUILD: number | null = null;
+export const FIRST_FREE_BUILD: number | null = 6;
 
 export function isPaidDownloadBuild(originalAppVersion: string, firstFreeBuild: number | null): boolean {
   if (firstFreeBuild === null || !/^\d+$/.test(originalAppVersion)) {
