@@ -24,6 +24,20 @@ then reinstall so AsyncStorage is empty.
 | A5 | Tap Maybe Later | Modal closes, Home remains, operations still locked | ✅ Modal closes, Home remains, ops still locked |
 | A6 | Modal price label | "Unlock for $X.XX" (or plain "Unlock" if store products unavailable) | ✅ "Unlock for $2.99" (price fetched from sandbox) |
 
+## Part A2 – Parental gate (Kids Category)
+
+The unlock window opens on an "Ask a grown-up" gate: a three-digit number written in words that has
+to be typed as digits. The price, Unlock and Restore Purchase only appear after it is passed.
+
+| # | Step | Expected | Result |
+|---|------|----------|--------|
+| G1 | Tap a locked operation | "Ask a grown-up" with a number in words; no price, Unlock or Restore visible | ✅ iPhone 16 Pro |
+| G2 | Type a wrong number, tap Continue | "That's not right. Try this one instead.", a new number, field cleared | ✅ |
+| G3 | Type the right number, tap Continue | "Unlock All Operations" with price, Unlock, Restore Purchase | ✅ |
+| G4 | Maybe Later, then tap a locked operation again | Gate is shown again | ✅ |
+| G5 | Tap Cancel on the gate | Window closes, Home remains, still locked | ✅ |
+| G6 | iPhone SE / small phone: focus the field so the number pad shows | Continue and Cancel stay visible above the keypad | ✅ iPhone SE 3rd gen |
+
 ## Part B – Purchase flow (simulator with StoreKit config, or TestFlight sandbox account)
 
 | # | Step | Expected | Result |
