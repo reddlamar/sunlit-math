@@ -17,7 +17,10 @@ export function isPaidDownloadBuild(originalAppVersion: string, firstFreeBuild: 
 }
 
 export async function hasPaidDownload(firstFreeBuild: number | null = FIRST_FREE_BUILD): Promise<boolean> {
-  if (Platform.OS !== 'ios') {
+  // Development builds have no App Store receipt, so StoreKit asks the user to sign in
+  // to fetch an app transaction, on every launch. The answer is useless anyway: outside
+  // the App Store originalAppVersion is always "1.0", which never counts as paid.
+  if (Platform.OS !== 'ios' || __DEV__) {
     return false;
   }
   try {
