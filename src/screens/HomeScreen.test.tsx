@@ -8,6 +8,7 @@ import { HomeScreen } from './HomeScreen';
 import { PurchaseProvider } from '../purchases/PurchaseContext';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { addScore } from '../storage/scoresRepository';
+import { passParentalGate } from '../testUtils/parentalGate';
 import type { GameScreenProps, HomeScreenProps, RootStackParamList } from '../navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -38,6 +39,10 @@ function renderHomeScreen(navigation = makeNavigation()) {
 }
 
 describe('HomeScreen', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('shows all four operation buttons', async () => {
     const { getByText } = await renderHomeScreen();
     expect(getByText('+')).toBeTruthy();
@@ -55,13 +60,19 @@ describe('HomeScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('Game', { operation: 'addition' });
   });
 
-  it('shows the unlock modal instead of navigating for a locked operation', async () => {
+  it('shows the parental gate, then the unlock modal, for a locked operation', async () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
     const navigation = makeNavigation();
-    const { getByText, findByText } = await renderHomeScreen(navigation);
+    const utils = await renderHomeScreen(navigation);
 
-    await fireEvent.press(getByText('×'));
+    await fireEvent.press(utils.getByText('×'));
 
-    expect(await findByText('Unlock All Operations')).toBeTruthy();
+    expect(await utils.findByText('Ask a grown-up')).toBeTruthy();
+    expect(utils.queryByText('Unlock All Operations')).toBeNull();
+
+    await passParentalGate(utils);
+
+    expect(utils.getByText('Unlock All Operations')).toBeTruthy();
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
