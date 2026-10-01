@@ -5,7 +5,8 @@ to download (original build < 6, see `FIRST_FREE_BUILD` in `src/purchases/paidDo
 
 > Simulator and TestFlight report `originalAppVersion` as `"1.0"`, which the app treats
 > as *not paid*. Grandfathering (Part C) can only be verified on a real device with a
-> real App Store install/update.
+> real App Store install/update. Development builds (`npx expo run:ios`) skip the check
+> entirely, so they never show a "Sign in to Apple Account" prompt on launch.
 
 Record results as ✅ / ❌ with notes. Device/iOS: iPhone 16 Pro simulator, iOS 18.1 (E4 also on iPhone SE 3rd gen + iPad 10th gen)  Build: 1.1.0 debug dev client @ 3c67d3b  Tester: Claude Code (AXe-driven), 2026-09-30
 
@@ -80,3 +81,28 @@ For **each** of Addition (+), Subtraction (−), Multiplication (×), Division (
 - [ ] Part C passes on a real device that installed build ≤ 5 — not run (needs real device)
 - [ ] All four operations pass Part D — gameplay passes; D1 (no exit from Get Ready), D4 (no shake) and D10 (stale Home card) fail
 - [x] No crashes or console errors — no crashes and no JS errors; only StoreKit "No active account" and system log noise
+
+## Retest after fixes (93049f2) – 2026-09-30
+
+iOS: iPhone 16 Pro simulator, iOS 18.1, fresh install. Android: Pixel_10 emulator (Android 17, Google Play image), debug build, fresh data.
+Paid operations unlocked for Part D by setting `math60_unlocked_v1` in AsyncStorage (no store purchase possible on either emulator).
+
+| # | iOS | Android |
+|---|-----|---------|
+| A1 | ⚠️ Home OK, but still 2 "Sign in to Apple Account" prompts on every launch (not addressed by the fix) | ✅ No prompts |
+| A2–A5 | ✅ | ✅ |
+| A6 | ✅ "Unlock for $2.99" | ✅ Plain "Unlock" – Play returns `not-found` for the SKU on a debug build |
+| B1 | ⚠️ Sign-in prompt instead of payment sheet (no account) | ⚠️ No Play sheet; friendly "The purchase couldn't be completed. Please try again." |
+| B2 | ✅ Cancel → no error text, no spinner (fixed) | n/a (no sheet) |
+| B4 | ⚠️ Stored unlock survives relaunch; real purchase not tested | ⚠️ Same |
+| B6 | ✅ Cancel restore sign-in → no raw exception, stays locked (fixed). ⚠️ Restore shows several sign-in prompts in a row | ✅ Stays locked, no error |
+| D1 | ✅ All 4 ops: Get Ready 3‑2‑1; new **Back** button returns Home (fixed) | ✅ All 4 ops, Back works |
+| D2, D6, D7 | ✅ All 4 ops, 15 problems each, no issues | ✅ All 4 ops, 37 problems each, no issues |
+| D3/D4 | ✅ 6 correct → 12 / streak 6; wrong → 11 / streak 0 | ✅ Final score matched the expected tally (95) for all 4 ops |
+| D4 shake | ✅ Grid shakes ±9 pt on wrong answer only (video-verified) (fixed) | ✅ Grid shakes ±24 px on wrong answer only (video-verified) |
+| D5 | ✅ | ✅ |
+| D8, D9 | ✅ | ✅ |
+| D10 | ✅ Home Top Score card refreshes after Back (−1 → 29) (fixed); leaderboard filters correct | ✅ Card refreshes (→ "Andy Div · 95"); filters correct |
+| E3 | ✅ Stale error no longer shown on reopen (fixed). ⚠️ Header banner still has a light background in dark mode | ✅ Same banner nit |
+
+Unit tests: 170/170 pass. No crashes or JS errors on either platform.
