@@ -4,6 +4,11 @@ import { isPaidDownloadBuild, hasPaidDownload, FIRST_FREE_BUILD } from './paidDo
 
 const mockGetAppTransaction = getAppTransactionIOS as jest.Mock;
 
+// __DEV__ is a global const in React Native's types; tests flip it to cover release builds.
+function setDev(value: boolean) {
+  (globalThis as unknown as { __DEV__: boolean }).__DEV__ = value;
+}
+
 describe('isPaidDownloadBuild', () => {
   it('is true for builds older than the first free build', () => {
     expect(isPaidDownloadBuild('3', 10)).toBe(true);
@@ -32,14 +37,17 @@ describe('isPaidDownloadBuild', () => {
 
 describe('hasPaidDownload', () => {
   const originalOS = Platform.OS;
+  const originalDev = __DEV__;
 
   beforeEach(() => {
     mockGetAppTransaction.mockReset();
     Platform.OS = 'ios';
+    setDev(false);
   });
 
   afterAll(() => {
     Platform.OS = originalOS;
+    setDev(originalDev);
   });
 
   it('is true when the original download was an older, paid build', async () => {
@@ -67,11 +75,25 @@ describe('hasPaidDownload', () => {
     expect(await hasPaidDownload(10)).toBe(false);
     expect(mockGetAppTransaction).not.toHaveBeenCalled();
   });
+
+  it('is false in development builds without calling the store (which would prompt for sign-in)', async () => {
+    setDev(true);
+    mockGetAppTransaction.mockResolvedValue({ originalAppVersion: '3' });
+    expect(await hasPaidDownload(10)).toBe(false);
+    expect(mockGetAppTransaction).not.toHaveBeenCalled();
+  });
 });
 
 describe('production cutoff', () => {
+  const originalDev = __DEV__;
+
   beforeEach(() => {
     Platform.OS = 'ios';
+    setDev(false);
+  });
+
+  afterAll(() => {
+    setDev(originalDev);
   });
 
   it('treats build 6 as the first free build', () => {

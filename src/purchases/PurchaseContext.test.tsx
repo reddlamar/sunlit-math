@@ -1,10 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIAP } from 'expo-iap';
 import { PurchaseProvider, usePurchase } from './PurchaseContext';
 import { UNLOCK_ALL_OPERATIONS_SKU } from './entitlements';
+import { PURCHASE_FAILED_MESSAGE, RESTORE_FAILED_MESSAGE } from './purchaseErrors';
 import { hasPaidDownload } from './paidDownload';
 
 jest.mock('./paidDownload', () => ({ hasPaidDownload: jest.fn().mockResolvedValue(false) }));
@@ -14,7 +15,7 @@ const mockHasPaidDownload = hasPaidDownload as jest.Mock;
 const mockUseIAP = useIAP as jest.Mock;
 
 function Probe() {
-  const { isUnlocked, price, purchase, restore } = usePurchase();
+  const { isUnlocked, price, lastError, purchase, restore, clearError } = usePurchase();
   return (
     <>
       <Text>{isUnlocked ? 'unlocked' : 'locked'}</Text>
@@ -22,7 +23,37 @@ function Probe() {
       <Text testID="restore" onPress={restore}>
         restore
       </Text>
+      <Text testID="error" onPress={clearError}>
+        {lastError ?? 'no-error'}
+      </Text>
     </>
+  );
+}
+
+function mockStore(overrides: Record<string, unknown> = {}) {
+  let capturedOptions: any;
+  mockUseIAP.mockImplementation((options: any) => {
+    capturedOptions = options;
+    return {
+      connected: true,
+      products: [],
+      availablePurchases: [],
+      finishTransaction: jest.fn(),
+      getAvailablePurchases: jest.fn(),
+      fetchProducts: jest.fn(),
+      requestPurchase: jest.fn(),
+      restorePurchases: jest.fn(),
+      ...overrides,
+    };
+  });
+  return { options: () => capturedOptions };
+}
+
+function renderProbe() {
+  return render(
+    <PurchaseProvider>
+      <Probe />
+    </PurchaseProvider>
   );
 }
 
@@ -177,5 +208,60 @@ describe('PurchaseProvider', () => {
       expect(restorePurchases).toHaveBeenCalled();
       expect(getAvailablePurchases).toHaveBeenCalled();
     });
+  });
+
+  it('shows no error when the user cancels the payment sheet', async () => {
+    const store = mockStore();
+    const { getByTestId } = await renderProbe();
+
+    await act(async () => {
+      store.options().onPurchaseError({ code: 'user-cancelled', message: 'User cancelled the purchase flow' });
+    });
+
+    expect(getByTestId('error').props.children).toBe('no-error');
+  });
+
+  it('shows a friendly message, not the raw native one, when a purchase fails', async () => {
+    const store = mockStore();
+    const { getByTestId } = await renderProbe();
+
+    await act(async () => {
+      store.options().onPurchaseError({ code: 'unknown', message: 'UnexpectedException: boom (at Foo.swift:1)' });
+    });
+
+    expect(getByTestId('error').props.children).toBe(PURCHASE_FAILED_MESSAGE);
+  });
+
+  it('shows no error when the Apple sign-in prompt is cancelled during restore', async () => {
+    mockStore({
+      restorePurchases: jest
+        .fn()
+        .mockRejectedValue(new Error('UnexpectedException: Request Canceled (at ExpoModulesCore/ConcurrentFunctionDefinition.swift:90)')),
+    });
+    const { getByTestId } = await renderProbe();
+
+    await fireEvent.press(getByTestId('restore'));
+
+    expect(getByTestId('error').props.children).toBe('no-error');
+  });
+
+  it('shows a friendly message, not the raw native one, when restore fails', async () => {
+    mockStore({ restorePurchases: jest.fn().mockRejectedValue(new Error('UnexpectedException: boom')) });
+    const { getByTestId } = await renderProbe();
+
+    await fireEvent.press(getByTestId('restore'));
+
+    expect(getByTestId('error').props.children).toBe(RESTORE_FAILED_MESSAGE);
+  });
+
+  it('clearError removes the last error', async () => {
+    mockStore({ restorePurchases: jest.fn().mockRejectedValue(new Error('boom')) });
+    const { getByTestId } = await renderProbe();
+    await fireEvent.press(getByTestId('restore'));
+    expect(getByTestId('error').props.children).toBe(RESTORE_FAILED_MESSAGE);
+
+    await fireEvent.press(getByTestId('error'));
+
+    expect(getByTestId('error').props.children).toBe('no-error');
   });
 });

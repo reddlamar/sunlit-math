@@ -11,9 +11,10 @@ const COUNTDOWN_MS = 3000;
 type GetReadyModalProps = {
   visible: boolean;
   onReady: () => void;
+  onExit: () => void;
 };
 
-export function GetReadyModal({ visible, onReady }: GetReadyModalProps) {
+export function GetReadyModal({ visible, onReady, onExit }: GetReadyModalProps) {
   const { colors } = useSettings();
   const [phase, setPhase] = useState<'intro' | 'countdown'>('intro');
   const [wasVisible, setWasVisible] = useState(visible);
@@ -40,7 +41,14 @@ export function GetReadyModal({ visible, onReady }: GetReadyModalProps) {
   const secondsLeft = Math.ceil(timeLeft / 1000);
 
   return (
-    <ModalCard visible={visible} centered transparentCard={phase === 'countdown'}>
+    // The modal covers the stack header and blocks the back swipe, so it has to
+    // provide its own way out.
+    <ModalCard
+      visible={visible}
+      onRequestClose={onExit}
+      centered
+      transparentCard={phase === 'countdown'}
+    >
       {phase === 'intro' ? (
         <>
           <Text style={styles.emoji}>⏱️</Text>
@@ -54,6 +62,14 @@ export function GetReadyModal({ visible, onReady }: GetReadyModalProps) {
             onPress={handleStart}
           >
             <Text style={styles.startLabel}>Start</Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            testID="get-ready-exit-button"
+            accessibilityRole="button"
+            style={styles.exitButton}
+            onPress={onExit}
+          >
+            <Text style={[styles.exitLabel, { color: colors.textSecondary }]}>Back</Text>
           </AnimatedPressable>
         </>
       ) : (
@@ -87,6 +103,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
+  },
+  exitButton: {
+    marginTop: 16,
+    paddingVertical: 4,
+  },
+  exitLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: fontFamily.regular,
   },
   countdown: {
     fontSize: 72,

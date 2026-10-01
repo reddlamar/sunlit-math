@@ -7,6 +7,8 @@ import type { Difficulty, GameState, GameStatus, Operation, Problem } from '../t
 
 const GAME_DURATION_MS = 60000;
 
+export type AnswerResult = 'correct' | 'wrong' | 'ignored';
+
 export type UseGameEngineResult = {
   problem: Problem | null;
   score: number;
@@ -15,7 +17,7 @@ export type UseGameEngineResult = {
   duration: number;
   status: GameStatus;
   start: () => void;
-  submitAnswer: (value: number) => void;
+  submitAnswer: (value: number) => AnswerResult;
   pause: () => void;
   resume: () => void;
 };
@@ -43,9 +45,9 @@ export function useGameEngine(
   }, [generator, difficulty, timer]);
 
   const submitAnswer = useCallback(
-    (value: number) => {
+    (value: number): AnswerResult => {
       if (status !== 'playing' || !problem) {
-        return;
+        return 'ignored';
       }
       const isCorrect = value === problem.answer;
       setGameState((prev) => (isCorrect ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
@@ -55,6 +57,7 @@ export function useGameEngine(
       } else {
         playWrongSound();
       }
+      return isCorrect ? 'correct' : 'wrong';
     },
     [status, problem, generator, difficulty]
   );

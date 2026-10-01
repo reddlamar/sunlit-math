@@ -7,8 +7,13 @@ import type { GameScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
 
+const mockShake = jest.fn();
+jest.mock('../components/useShake', () => ({
+  useShake: () => ({ shake: mockShake, shakeStyle: {} }),
+}));
+
 function makeNavigation() {
-  return { navigate: jest.fn() } as unknown as GameScreenProps['navigation'];
+  return { navigate: jest.fn(), goBack: jest.fn() } as unknown as GameScreenProps['navigation'];
 }
 
 function makeRoute(): GameScreenProps['route'] {
@@ -207,4 +212,35 @@ describe('GameScreen', () => {
     await fireEvent.press(getByText('View Leaderboard'));
     expect(navigation.navigate).toHaveBeenCalledWith('Leaderboard', { operation: 'addition' });
   });
+
+  it('goes back home from the get ready modal without starting a round', async () => {
+    const navigation = makeNavigation();
+    const { getByTestId } = await renderGameScreen(navigation);
+
+    await fireEvent.press(getByTestId('get-ready-exit-button'));
+
+    expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('shakes the answer grid after a wrong answer, but not after a correct one', async () => {
+    const { getByTestId, findAllByTestId } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+
+    await fireEvent.press(await findChoice(getByTestId, findAllByTestId, true));
+    expect(mockShake).not.toHaveBeenCalled();
+
+    await fireEvent.press(await findChoice(getByTestId, findAllByTestId, false));
+    expect(mockShake).toHaveBeenCalledTimes(1);
+  });
 });
+
+async function findChoice(
+  getByTestId: Awaited<ReturnType<typeof render>>['getByTestId'],
+  findAllByTestId: Awaited<ReturnType<typeof render>>['findAllByTestId'],
+  correct: boolean
+) {
+  const questionText = getByTestId('problem-question').props.children as string;
+  const [a, b] = questionText.split('+').map((n: string) => Number(n.trim()));
+  const choices = await findAllByTestId('answer-choice');
+  return choices.find((c) => (c.props.children === a + b) === correct)!;
+}

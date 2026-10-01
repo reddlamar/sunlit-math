@@ -12,8 +12,17 @@ type UnlockModalProps = {
 };
 
 export function UnlockModal({ visible, onClose }: UnlockModalProps) {
-  const { isUnlocked, isPurchasing, price, lastError, purchase, restore } = usePurchase();
+  const { isUnlocked, isPurchasing, price, lastError, purchase, restore, clearError } =
+    usePurchase();
   const { colors } = useSettings();
+
+  // lastError is shared provider state, so an error from an earlier attempt would
+  // otherwise reappear when the modal is reopened.
+  React.useEffect(() => {
+    if (visible) {
+      clearError();
+    }
+  }, [visible, clearError]);
 
   React.useEffect(() => {
     if (visible && isUnlocked) {

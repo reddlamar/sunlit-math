@@ -23,25 +23,25 @@ describe('GetReadyModal', () => {
   });
 
   it('is not visible when visible is false', async () => {
-    const { queryByTestId } = await renderModal({ visible: false, onReady: jest.fn() });
+    const { queryByTestId } = await renderModal({ visible: false, onReady: jest.fn(), onExit: jest.fn() });
     expect(queryByTestId('get-ready-start-button')).toBeNull();
   });
 
   it('shows the intro with a Start button when visible', async () => {
-    const { getByTestId, getByText } = await renderModal({ visible: true, onReady: jest.fn() });
+    const { getByTestId, getByText } = await renderModal({ visible: true, onReady: jest.fn(), onExit: jest.fn() });
     expect(getByText(/60 seconds/)).toBeTruthy();
     expect(getByTestId('get-ready-start-button')).toBeTruthy();
   });
 
   it('has a solid card background during the intro screen', async () => {
-    const { getByTestId } = await renderModal({ visible: true, onReady: jest.fn() });
+    const { getByTestId } = await renderModal({ visible: true, onReady: jest.fn(), onExit: jest.fn() });
     expect(hasStyleValue(getByTestId('modal-card').props.style, 'backgroundColor', light.surface)).toBe(
       true
     );
   });
 
   it('has no solid card background once counting down, so the dimmed backdrop shows through', async () => {
-    const { getByTestId } = await renderModal({ visible: true, onReady: jest.fn() });
+    const { getByTestId } = await renderModal({ visible: true, onReady: jest.fn(), onExit: jest.fn() });
 
     await fireEvent.press(getByTestId('get-ready-start-button'));
 
@@ -55,6 +55,7 @@ describe('GetReadyModal', () => {
     const { getByTestId, getByText, queryByTestId } = await renderModal({
       visible: true,
       onReady,
+      onExit: jest.fn(),
     });
 
     await fireEvent.press(getByTestId('get-ready-start-button'));
@@ -82,21 +83,32 @@ describe('GetReadyModal', () => {
 
   it('resets to the intro phase the next time it becomes visible', async () => {
     const onReady = jest.fn();
-    const { getByTestId, rerender } = await renderModal({ visible: true, onReady });
+    const { getByTestId, rerender } = await renderModal({ visible: true, onReady, onExit: jest.fn() });
 
     await fireEvent.press(getByTestId('get-ready-start-button'));
 
     await rerender(
       <SettingsProvider>
-        <GetReadyModal visible={false} onReady={onReady} />
+        <GetReadyModal visible={false} onReady={onReady} onExit={jest.fn()} />
       </SettingsProvider>
     );
     await rerender(
       <SettingsProvider>
-        <GetReadyModal visible onReady={onReady} />
+        <GetReadyModal visible onReady={onReady} onExit={jest.fn()} />
       </SettingsProvider>
     );
 
     expect(getByTestId('get-ready-start-button')).toBeTruthy();
+  });
+
+  it('offers a Back button on the intro that calls onExit without starting the round', async () => {
+    const onReady = jest.fn();
+    const onExit = jest.fn();
+    const { getByTestId } = await renderModal({ visible: true, onReady, onExit });
+
+    await fireEvent.press(getByTestId('get-ready-exit-button'));
+
+    expect(onExit).toHaveBeenCalledTimes(1);
+    expect(onReady).not.toHaveBeenCalled();
   });
 });

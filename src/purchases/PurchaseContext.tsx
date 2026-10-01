@@ -1,8 +1,16 @@
-import React, { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type PropsWithChildren,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIAP, type Purchase } from 'expo-iap';
 import { UNLOCK_ALL_OPERATIONS_SKU } from './entitlements';
 import { hasPaidDownload } from './paidDownload';
+import { PURCHASE_FAILED_MESSAGE, RESTORE_FAILED_MESSAGE, toPurchaseErrorMessage } from './purchaseErrors';
 
 const STORAGE_KEY = 'math60_unlocked_v1';
 
@@ -13,6 +21,7 @@ type PurchaseContextValue = {
   lastError: string | null;
   purchase: () => Promise<void>;
   restore: () => Promise<void>;
+  clearError: () => void;
 };
 
 const PurchaseContext = createContext<PurchaseContextValue | undefined>(undefined);
@@ -49,7 +58,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
       setIsPurchasing(false);
     },
     onPurchaseError: (error) => {
-      setLastError(error.message);
+      setLastError(toPurchaseErrorMessage(error, PURCHASE_FAILED_MESSAGE));
       setIsPurchasing(false);
     },
   });
@@ -99,7 +108,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
         type: 'in-app',
       });
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : 'Purchase failed');
+      setLastError(toPurchaseErrorMessage(error, PURCHASE_FAILED_MESSAGE));
       setIsPurchasing(false);
     }
   };
@@ -111,11 +120,13 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
       await restorePurchases();
       await getAvailablePurchases();
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : 'Restore failed');
+      setLastError(toPurchaseErrorMessage(error, RESTORE_FAILED_MESSAGE));
     } finally {
       setIsPurchasing(false);
     }
   };
+
+  const clearError = useCallback(() => setLastError(null), []);
 
   const value: PurchaseContextValue = {
     isUnlocked,
@@ -124,6 +135,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
     lastError,
     purchase,
     restore,
+    clearError,
   };
 
   return <PurchaseContext.Provider value={value}>{children}</PurchaseContext.Provider>;
