@@ -38,6 +38,16 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Expo Doctor
-        run: npx expo-doctor
+        # expo-doctor's schema check only accepts image files for ios.icon, so it
+        # wrongly rejects the Icon Composer bundle (assets/SunlitMath.icon) that Expo
+        # prebuild supports. Tolerate exactly that one finding; any other failure fails.
+        run: |
+          npx expo-doctor 2>&1 | tee "$RUNNER_TEMP/doctor.log" || true
+          if grep -E '^ Field: ' "$RUNNER_TEMP/doctor.log" | grep -qv "ios.icon - cannot access file at './assets/SunlitMath.icon'"; then
+            echo "::error::Unexpected Expo config schema error"; exit 1
+          fi
+          failed=$(grep -c '^✖' "$RUNNER_TEMP/doctor.log" || true)
+          if grep -q "^✖ Check Expo config" "$RUNNER_TEMP/doctor.log"; then failed=$((failed - 1)); fi
+          [ "$failed" -eq 0 ]
       - name: Bundle iOS
         run: npx expo export --platform ios --output-dir "$RUNNER_TEMP/export"
