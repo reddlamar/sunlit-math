@@ -1,7 +1,4 @@
 {
-  "fill": {
-    "solid": "srgb:0.99216,0.92157,0.77255,1.00000"
-  },
   "groups": [
     {
       "layers": [
@@ -11,7 +8,10 @@
           "name": "sun",
           "position": {
             "scale": 1,
-            "translation-in-points": [0, 0]
+            "translation-in-points": [
+              0,
+              0
+            ]
           }
         }
       ],
@@ -26,7 +26,22 @@
     }
   ],
   "supported-platforms": {
-    "circles": ["watchOS"],
+    "circles": [
+      "watchOS"
+    ],
     "squares": "shared"
-  }
+  },
+  "fill-specializations": [
+    {
+      "value": {
+        "solid": "srgb:0.99216,0.92157,0.77255,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "srgb:0.03922,0.12157,0.26667,1.00000"
+      }
+    }
+  ]
 }
