@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert, AppState, type AlertButton } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { GameScreen } from './GameScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
@@ -12,8 +13,36 @@ jest.mock('../components/useShake', () => ({
   useShake: () => ({ shake: mockShake, shakeStyle: {} }),
 }));
 
+// The screen is rendered without a NavigationContainer, so usePreventRemove is mocked;
+// the mock records the latest `preventRemove` flag and callback for the tests to drive.
+const mockPreventRemove: {
+  prevent: boolean;
+  callback: ((event: { data: { action: unknown } }) => void) | null;
+} = { prevent: false, callback: null };
+jest.mock('@react-navigation/native', () => ({
+  usePreventRemove: (
+    prevent: boolean,
+    callback: (event: { data: { action: unknown } }) => void
+  ) => {
+    mockPreventRemove.prevent = prevent;
+    mockPreventRemove.callback = callback;
+  },
+}));
+
 function makeNavigation() {
-  return { navigate: jest.fn(), goBack: jest.fn() } as unknown as GameScreenProps['navigation'];
+  return {
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    dispatch: jest.fn(),
+  } as unknown as GameScreenProps['navigation'];
+}
+
+// Presses the named button of the most recent Alert.alert call.
+async function pressAlertButton(label: string) {
+  const buttons = jest.mocked(Alert.alert).mock.calls.at(-1)![2] as AlertButton[];
+  await act(async () => {
+    buttons.find((button) => button.text === label)!.onPress?.();
+  });
 }
 
 function makeRoute(): GameScreenProps['route'] {
@@ -41,7 +70,10 @@ describe('GameScreen', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockPreventRemove.prevent = false;
+    mockPreventRemove.callback = null;
     jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -127,6 +159,7 @@ describe('GameScreen', () => {
     });
 
     await fireEvent.press(getByTestId('restart-button'));
+    await pressAlertButton('Restart');
 
     expect(getByTestId('get-ready-start-button')).toBeTruthy();
 
@@ -142,6 +175,7 @@ describe('GameScreen', () => {
     await dismissGetReadyModal(getByTestId);
 
     await fireEvent.press(getByTestId('restart-button'));
+    await pressAlertButton('Restart');
 
     await act(async () => {
       jest.advanceTimersByTime(60000);
@@ -159,6 +193,7 @@ describe('GameScreen', () => {
     expect(queryAllByTestId('answer-choice').length).toBe(0);
 
     await fireEvent.press(getByTestId('restart-button'));
+    await pressAlertButton('Restart');
     await dismissGetReadyModal(getByTestId);
 
     expect(await findAllByTestId('answer-choice')).not.toHaveLength(0);
@@ -220,6 +255,70 @@ describe('GameScreen', () => {
     await fireEvent.press(getByTestId('get-ready-exit-button'));
 
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks before restarting, and keeps the round paused if the player keeps playing', async () => {
+    const { getByTestId, queryByTestId } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+
+    await fireEvent.press(getByTestId('restart-button'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Restart this round?',
+      expect.any(String),
+      expect.any(Array)
+    );
+    expect(queryByTestId('get-ready-start-button')).toBeNull();
+
+    await pressAlertButton('Keep playing');
+
+    expect(queryByTestId('get-ready-start-button')).toBeNull();
+    expect(getByTestId('resume-button')).toBeTruthy();
+  });
+
+  it('pauses the round when the app goes to the background', async () => {
+    let appStateHandler: ((state: string) => void) | undefined;
+    jest.spyOn(AppState, 'addEventListener').mockImplementation(((
+      _type: string,
+      handler: (state: string) => void
+    ) => {
+      appStateHandler = handler;
+      return { remove: jest.fn() };
+    }) as unknown as typeof AppState.addEventListener);
+
+    const { getByTestId, queryAllByTestId } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+
+    await act(async () => {
+      appStateHandler!('background');
+    });
+
+    expect(getByTestId('resume-button')).toBeTruthy();
+    expect(queryAllByTestId('answer-choice')).toHaveLength(0);
+  });
+
+  it('confirms before leaving mid-round and pauses while the question is open', async () => {
+    const navigation = makeNavigation();
+    const { getByTestId } = await renderGameScreen(navigation);
+    await dismissGetReadyModal(getByTestId);
+
+    expect(mockPreventRemove.prevent).toBe(true);
+    const action = { type: 'GO_BACK' };
+    await act(async () => {
+      mockPreventRemove.callback!({ data: { action } });
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith('Leave this game?', expect.any(String), expect.any(Array));
+    expect(getByTestId('resume-button')).toBeTruthy();
+
+    await pressAlertButton('Leave');
+    expect(navigation.dispatch).toHaveBeenCalledWith(action);
+  });
+
+  it('does not intercept leaving while Get Ready is showing', async () => {
+    await renderGameScreen();
+
+    expect(mockPreventRemove.prevent).toBe(false);
   });
 
   it('shakes the answer grid after a wrong answer, but not after a correct one', async () => {

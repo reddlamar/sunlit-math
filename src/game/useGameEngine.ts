@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { onCorrectAnswer, onWrongAnswer } from './scoring';
 import { generatorForOperation } from './problemGenerators';
 import { useGameTimer } from './useGameTimer';
@@ -31,27 +31,50 @@ export function useGameEngine(
   const [gameState, setGameState] = useState<GameState>({ score: 0, streak: 0 });
   const [status, setStatus] = useState<GameStatus>('idle');
 
-  const handleExpire = useCallback(() => {
-    setStatus('ended');
+  // The current problem and status are mirrored in refs so the callbacks below read
+  // the latest values synchronously. Two quick taps in one frame can't both be
+  // judged against the same stale problem, and the callbacks keep a stable identity
+  // across the 10 timer re-renders per second (which lets the answer grid skip them).
+  const problemRef = useRef<Problem | null>(null);
+  const statusRef = useRef<GameStatus>('idle');
+
+  const updateProblem = useCallback((next: Problem | null) => {
+    problemRef.current = next;
+    setProblem(next);
   }, []);
 
-  const timer = useGameTimer(GAME_DURATION_MS, handleExpire);
+  const updateStatus = useCallback((next: GameStatus) => {
+    statusRef.current = next;
+    setStatus(next);
+  }, []);
+
+  const handleExpire = useCallback(() => {
+    updateStatus('ended');
+  }, [updateStatus]);
+
+  const {
+    timeLeft,
+    start: startTimer,
+    pause: pauseTimer,
+    resume: resumeTimer,
+  } = useGameTimer(GAME_DURATION_MS, handleExpire);
 
   const start = useCallback(() => {
     setGameState({ score: 0, streak: 0 });
-    setProblem(generator(difficulty));
-    setStatus('playing');
-    timer.start();
-  }, [generator, difficulty, timer]);
+    updateProblem(generator(difficulty));
+    updateStatus('playing');
+    startTimer();
+  }, [generator, difficulty, startTimer, updateProblem, updateStatus]);
 
   const submitAnswer = useCallback(
     (value: number): AnswerResult => {
-      if (status !== 'playing' || !problem) {
+      const current = problemRef.current;
+      if (statusRef.current !== 'playing' || !current) {
         return 'ignored';
       }
-      const isCorrect = value === problem.answer;
+      const isCorrect = value === current.answer;
       setGameState((prev) => (isCorrect ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
-      setProblem(generator(difficulty));
+      updateProblem(generator(difficulty));
       if (isCorrect) {
         playCorrectSound();
       } else {
@@ -59,30 +82,30 @@ export function useGameEngine(
       }
       return isCorrect ? 'correct' : 'wrong';
     },
-    [status, problem, generator, difficulty]
+    [generator, difficulty, updateProblem]
   );
 
   const pause = useCallback(() => {
-    if (status !== 'playing') {
+    if (statusRef.current !== 'playing') {
       return;
     }
-    timer.pause();
-    setStatus('paused');
-  }, [status, timer]);
+    pauseTimer();
+    updateStatus('paused');
+  }, [pauseTimer, updateStatus]);
 
   const resume = useCallback(() => {
-    if (status !== 'paused') {
+    if (statusRef.current !== 'paused') {
       return;
     }
-    timer.resume();
-    setStatus('playing');
-  }, [status, timer]);
+    resumeTimer();
+    updateStatus('playing');
+  }, [resumeTimer, updateStatus]);
 
   return {
     problem,
     score: gameState.score,
     streak: gameState.streak,
-    timeLeft: timer.timeLeft,
+    timeLeft,
     duration: GAME_DURATION_MS,
     status,
     start,

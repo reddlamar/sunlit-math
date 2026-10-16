@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
@@ -11,7 +11,12 @@ type AnswerButtonProps = {
   color?: string;
 };
 
-export function AnswerButton({ value, onPress, disabled, color = '#5B4FCF' }: AnswerButtonProps) {
+export const AnswerButton = memo(function AnswerButton({
+  value,
+  onPress,
+  disabled,
+  color = '#5B4FCF',
+}: AnswerButtonProps) {
   return (
     <AnimatedPressable
       accessibilityRole="button"
@@ -26,7 +31,7 @@ export function AnswerButton({ value, onPress, disabled, color = '#5B4FCF' }: An
       </Text>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {

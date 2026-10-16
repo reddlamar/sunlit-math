@@ -169,4 +169,27 @@ describe('useGameEngine', () => {
     });
     expect(outcome).toBe('correct');
   });
+
+  it('keeps start, submitAnswer, pause and resume stable across timer ticks', async () => {
+    const { result } = await renderHook(() => useGameEngine('addition'));
+    await act(async () => {
+      result.current.start();
+    });
+    const before = {
+      start: result.current.start,
+      submitAnswer: result.current.submitAnswer,
+      pause: result.current.pause,
+      resume: result.current.resume,
+    };
+
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.timeLeft).toBeLessThan(60000);
+    expect(result.current.start).toBe(before.start);
+    expect(result.current.submitAnswer).toBe(before.submitAnswer);
+    expect(result.current.pause).toBe(before.pause);
+    expect(result.current.resume).toBe(before.resume);
+  });
 });
