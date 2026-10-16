@@ -9,6 +9,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reddlamar.sunlitmath",
+      "icon": "./assets/SunlitMath.icon",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
