@@ -9,12 +9,18 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reddlamar.sunlitmath",
+      "icon": "./assets/SunlitMath.icon",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "icon": "./assets/icon-android.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-android-foreground.png",
+        "monochromeImage": "./assets/icon-android-monochrome.png",
+        "backgroundColor": "#FDEBC8"
+      },
       "predictiveBackGestureEnabled": false,
       "package": "com.reddlamar.sunlitmath",
       "permissions": [
