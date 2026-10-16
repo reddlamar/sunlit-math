@@ -15,10 +15,14 @@ export function useGameTimer(durationMs: number, onExpire: () => void): UseGameT
   const [timeLeft, setTimeLeft] = useState(durationMs);
   const [isRunning, setIsRunning] = useState(false);
   const endTimeRef = useRef<number | null>(null);
+  const timeLeftRef = useRef(durationMs);
   const onExpireRef = useRef(onExpire);
   useEffect(() => {
     onExpireRef.current = onExpire;
   }, [onExpire]);
+  useEffect(() => {
+    timeLeftRef.current = timeLeft;
+  }, [timeLeft]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -46,10 +50,12 @@ export function useGameTimer(durationMs: number, onExpire: () => void): UseGameT
     setIsRunning(false);
   }, []);
 
+  // Reads the latest remaining time from a ref so `resume` keeps one identity for
+  // the whole round instead of changing on every 100ms tick.
   const resume = useCallback(() => {
-    endTimeRef.current = Date.now() + timeLeft;
+    endTimeRef.current = Date.now() + timeLeftRef.current;
     setIsRunning(true);
-  }, [timeLeft]);
+  }, []);
 
   const reset = useCallback(() => {
     endTimeRef.current = null;

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, AppState, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
-import { AnswerButton } from '../components/AnswerButton';
+import { AnswerGrid } from '../components/AnswerGrid';
 import { TimerBar } from '../components/TimerBar';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
@@ -10,7 +10,7 @@ import { GetReadyModal } from '../components/GetReadyModal';
 import { useShake } from '../components/useShake';
 import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
-import { choiceColors, fontFamily, operationColors } from '../theme/tokens';
+import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
@@ -23,13 +23,51 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
   const { shake, shakeStyle } = useShake();
 
+  const { submitAnswer, pause } = engine;
+  const isRoundInProgress = engine.status === 'playing' || engine.status === 'paused';
+
   // The pressed button is usually gone after a wrong answer (the next problem has
   // new choices), so the whole grid shakes instead.
-  const handleAnswer = (value: number) => {
-    if (engine.submitAnswer(value) === 'wrong') {
-      shake();
+  const handleAnswer = useCallback(
+    (value: number) => {
+      if (submitAnswer(value) === 'wrong') {
+        shake();
+      }
+    },
+    [submitAnswer, shake]
+  );
+
+  // The timer runs on wall-clock time, so a phone call or app switch would otherwise
+  // quietly burn the round. Pausing on background gives the player the round back.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        pause();
+      }
+    });
+    return () => subscription.remove();
+  }, [pause]);
+
+  // Leaving mid-round (back button, swipe, Android back) throws the score away, so
+  // ask first. Not while Get Ready is showing: that modal has its own exit.
+  const shouldConfirmLeave = isRoundInProgress && !isGetReadyVisible;
+  useEffect(() => {
+    if (!shouldConfirmLeave) {
+      return;
     }
-  };
+    return navigation.addListener('beforeRemove', (event) => {
+      event.preventDefault();
+      pause();
+      Alert.alert('Leave this game?', 'Your score for this round will be lost.', [
+        { text: 'Keep playing', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: () => navigation.dispatch(event.data.action),
+        },
+      ]);
+    });
+  }, [shouldConfirmLeave, navigation, pause]);
 
   const handleRoundReady = () => {
     setIsGetReadyVisible(false);
@@ -46,6 +84,16 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
     // while the player is looking at the Get Ready screen; no-op if not playing.
     engine.pause();
     setIsGetReadyVisible(true);
+  };
+
+  // Restart sits right next to Pause and wipes the round, so a mis-tap needs a safety net.
+  // The round is paused while the question is up and stays paused if they keep playing.
+  const handleRestartPress = () => {
+    engine.pause();
+    Alert.alert('Restart this round?', 'Your current score will be lost.', [
+      { text: 'Keep playing', style: 'cancel' },
+      { text: 'Restart', style: 'destructive', onPress: handleRestart },
+    ]);
   };
 
   const handleViewLeaderboard = () => {
@@ -98,7 +146,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
                 accessibilityLabel="Restart game"
                 wrapperStyle={styles.controlButtonWrapper}
                 style={[styles.controlButton, styles.restartButton]}
-                onPress={handleRestart}
+                onPress={handleRestartPress}
               >
                 <Text style={styles.controlIcon}>↻</Text>
               </AnimatedPressable>
@@ -140,17 +188,12 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
               <Text testID="problem-question" style={[styles.question, { color: colors.textPrimary }]}>
                 {engine.problem.question}
               </Text>
-              <Animated.View testID="answer-grid" style={[styles.choices, shakeStyle]}>
-                {engine.problem.choices.map((choice, index) => (
-                  <AnswerButton
-                    key={choice}
-                    value={choice}
-                    color={choiceColors[index % choiceColors.length]}
-                    onPress={handleAnswer}
-                    disabled={engine.status !== 'playing'}
-                  />
-                ))}
-              </Animated.View>
+              <AnswerGrid
+                choices={engine.problem.choices}
+                disabled={engine.status !== 'playing'}
+                onAnswer={handleAnswer}
+                shakeStyle={shakeStyle}
+              />
             </>
           )}
         </View>
@@ -197,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   controlButtonWrapper: {
-    marginRight: 10,
+    marginRight: 18,
   },
   controlButton: {
     width: 40,
@@ -236,11 +279,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     marginBottom: 24,
-  },
-  choices: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
   },
   summary: {
     flex: 1,
