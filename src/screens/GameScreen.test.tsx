@@ -13,32 +13,28 @@ jest.mock('../components/useShake', () => ({
   useShake: () => ({ shake: mockShake, shakeStyle: {} }),
 }));
 
-type BeforeRemoveHandler = (event: {
-  preventDefault: () => void;
-  data: { action: unknown };
-}) => void;
+// The screen is rendered without a NavigationContainer, so usePreventRemove is mocked;
+// the mock records the latest `preventRemove` flag and callback for the tests to drive.
+const mockPreventRemove: {
+  prevent: boolean;
+  callback: ((event: { data: { action: unknown } }) => void) | null;
+} = { prevent: false, callback: null };
+jest.mock('@react-navigation/native', () => ({
+  usePreventRemove: (
+    prevent: boolean,
+    callback: (event: { data: { action: unknown } }) => void
+  ) => {
+    mockPreventRemove.prevent = prevent;
+    mockPreventRemove.callback = callback;
+  },
+}));
 
 function makeNavigation() {
-  const beforeRemoveHandlers: BeforeRemoveHandler[] = [];
-  const navigation = {
+  return {
     navigate: jest.fn(),
     goBack: jest.fn(),
     dispatch: jest.fn(),
-    addListener: jest.fn((type: string, handler: BeforeRemoveHandler) => {
-      if (type === 'beforeRemove') {
-        beforeRemoveHandlers.push(handler);
-      }
-      return () => {
-        const index = beforeRemoveHandlers.indexOf(handler);
-        if (index >= 0) {
-          beforeRemoveHandlers.splice(index, 1);
-        }
-      };
-    }),
-  };
-  return Object.assign(navigation as unknown as GameScreenProps['navigation'], {
-    beforeRemoveHandlers,
-  });
+  } as unknown as GameScreenProps['navigation'];
 }
 
 // Presses the named button of the most recent Alert.alert call.
@@ -74,6 +70,8 @@ describe('GameScreen', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockPreventRemove.prevent = false;
+    mockPreventRemove.callback = null;
     jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
@@ -304,13 +302,12 @@ describe('GameScreen', () => {
     const { getByTestId } = await renderGameScreen(navigation);
     await dismissGetReadyModal(getByTestId);
 
-    const preventDefault = jest.fn();
+    expect(mockPreventRemove.prevent).toBe(true);
     const action = { type: 'GO_BACK' };
     await act(async () => {
-      navigation.beforeRemoveHandlers[0]({ preventDefault, data: { action } });
+      mockPreventRemove.callback!({ data: { action } });
     });
 
-    expect(preventDefault).toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('Leave this game?', expect.any(String), expect.any(Array));
     expect(getByTestId('resume-button')).toBeTruthy();
 
@@ -319,10 +316,9 @@ describe('GameScreen', () => {
   });
 
   it('does not intercept leaving while Get Ready is showing', async () => {
-    const navigation = makeNavigation();
-    await renderGameScreen(navigation);
+    await renderGameScreen();
 
-    expect(navigation.beforeRemoveHandlers).toHaveLength(0);
+    expect(mockPreventRemove.prevent).toBe(false);
   });
 
   it('shakes the answer grid after a wrong answer, but not after a correct one', async () => {

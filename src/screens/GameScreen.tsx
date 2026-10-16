@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, AppState, StyleSheet, Text, View } from 'react-native';
+import { usePreventRemove } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { AnswerGrid } from '../components/AnswerGrid';
@@ -50,24 +51,21 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
 
   // Leaving mid-round (back button, swipe, Android back) throws the score away, so
   // ask first. Not while Get Ready is showing: that modal has its own exit.
+  // usePreventRemove (rather than a raw beforeRemove listener) is what makes the iOS
+  // native stack actually keep the screen on cancel; without it iOS pops the screen
+  // natively and navigation state falls out of sync with what is on screen.
   const shouldConfirmLeave = isRoundInProgress && !isGetReadyVisible;
-  useEffect(() => {
-    if (!shouldConfirmLeave) {
-      return;
-    }
-    return navigation.addListener('beforeRemove', (event) => {
-      event.preventDefault();
-      pause();
-      Alert.alert('Leave this game?', 'Your score for this round will be lost.', [
-        { text: 'Keep playing', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: () => navigation.dispatch(event.data.action),
-        },
-      ]);
-    });
-  }, [shouldConfirmLeave, navigation, pause]);
+  usePreventRemove(shouldConfirmLeave, ({ data }) => {
+    pause();
+    Alert.alert('Leave this game?', 'Your score for this round will be lost.', [
+      { text: 'Keep playing', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: () => navigation.dispatch(data.action),
+      },
+    ]);
+  });
 
   const handleRoundReady = () => {
     setIsGetReadyVisible(false);

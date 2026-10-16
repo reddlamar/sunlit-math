@@ -5,6 +5,7 @@ import { SettingsProvider } from '../settings/SettingsContext';
 import type { GameScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
+jest.mock('@react-navigation/native', () => ({ usePreventRemove: jest.fn() }));
 
 // Counts how many times the (memoized) answer buttons actually render.
 const mockRenders = { answerButton: 0 };
@@ -30,7 +31,6 @@ const navigation = {
   navigate: jest.fn(),
   goBack: jest.fn(),
   dispatch: jest.fn(),
-  addListener: jest.fn(() => jest.fn()),
 } as unknown as GameScreenProps['navigation'];
 const route: GameScreenProps['route'] = {
   key: 'Game',
