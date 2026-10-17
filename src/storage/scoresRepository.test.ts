@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addScore, getAllScores, getTopScores } from './scoresRepository';
+import {
+  addScore,
+  getAllScores,
+  getLastPlayerName,
+  getTopScores,
+  setLastPlayerName,
+} from './scoresRepository';
 import type { ScoreEntry } from '../types/game';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -52,5 +58,32 @@ describe('scoresRepository', () => {
     expect(scores).toHaveLength(2);
     expect(scores.every((s) => s.operation === 'addition')).toBe(true);
     expect(scores[0].score).toBe(15);
+  });
+
+  it('filters top scores by difficulty, leaving out scores saved before difficulty was recorded', async () => {
+    await addScore(makeEntry({ id: 'a', score: 10, difficulty: 'easy' }));
+    await addScore(makeEntry({ id: 'b', score: 20, difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'c', score: 30 }));
+
+    const hard = await getTopScores(10, undefined, 'hard');
+    expect(hard.map((s) => s.id)).toEqual(['b']);
+
+    const all = await getTopScores(10);
+    expect(all.map((s) => s.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('combines the operation and difficulty filters', async () => {
+    await addScore(makeEntry({ id: 'a', score: 10, operation: 'addition', difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'b', score: 20, operation: 'division', difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'c', score: 30, operation: 'division', difficulty: 'easy' }));
+
+    const scores = await getTopScores(10, 'division', 'hard');
+    expect(scores.map((s) => s.id)).toEqual(['b']);
+  });
+
+  it('remembers the last player name, defaulting to empty', async () => {
+    expect(await getLastPlayerName()).toBe('');
+    await setLastPlayerName('Ada');
+    expect(await getLastPlayerName()).toBe('Ada');
   });
 });

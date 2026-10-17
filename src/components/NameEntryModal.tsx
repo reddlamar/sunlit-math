@@ -1,10 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { ModalCard } from './ModalCard';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
-import { addScore } from '../storage/scoresRepository';
+import { addScore, getLastPlayerName, setLastPlayerName } from '../storage/scoresRepository';
 import type { Operation, ScoreEntry } from '../types/game';
 
 const MAX_NAME_LENGTH = 20;
@@ -18,11 +18,29 @@ type NameEntryModalProps = {
 };
 
 export function NameEntryModal({ visible, score, operation, onSaved }: NameEntryModalProps) {
-  const { colors } = useSettings();
+  const { colors, difficulty } = useSettings();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
+
+  // Kids replay constantly, so offer the last name used instead of retyping it. Only fills
+  // an empty field, so it never clobbers something already being typed.
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const lastName = await getLastPlayerName();
+      if (!cancelled && lastName) {
+        setName((current) => current || lastName);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
 
   const handleChangeText = (text: string) => {
     setName(text);
@@ -47,10 +65,12 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
       name: trimmed,
       score,
       operation,
+      difficulty,
       createdAt: Date.now(),
     };
     try {
       await addScore(entry);
+      await setLastPlayerName(trimmed);
       setName('');
       onSaved(entry);
     } finally {
