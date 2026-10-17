@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    fontSize: 16,
+    fontSize: 19,
   },
   levelRow: {
     flexDirection: 'row',

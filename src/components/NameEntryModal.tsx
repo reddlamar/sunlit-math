@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { ModalCard } from './ModalCard';
 import { useSettings } from '../settings/SettingsContext';
-import { fontFamily } from '../theme/tokens';
+import { fontFamily, operationColors } from '../theme/tokens';
 import { addScore, getLastPlayerName, setLastPlayerName } from '../storage/scoresRepository';
 import type { Operation, ScoreEntry } from '../types/game';
 
@@ -142,14 +142,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   saveButton: {
-    backgroundColor: '#3DBE6C',
+    backgroundColor: operationColors.addition,
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
   },
   saveLabel: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

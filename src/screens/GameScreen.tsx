@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonLabel: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

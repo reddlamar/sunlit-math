@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginTop: 8,
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
