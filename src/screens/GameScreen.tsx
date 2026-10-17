@@ -107,7 +107,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             Nice work, {savedEntry.name}!
           </Text>
           <Text style={[styles.summaryScore, { color: operationColors[operation] }]}>
-            {savedEntry.score} points
+            {savedEntry.score} {Math.abs(savedEntry.score) === 1 ? 'point' : 'points'}
           </Text>
           <AnimatedPressable
             testID="play-again-button"
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonLabel: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

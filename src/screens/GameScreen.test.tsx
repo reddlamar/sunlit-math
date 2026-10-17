@@ -228,6 +228,36 @@ describe('GameScreen', () => {
     expect(queryByText(/Time's up!/)).toBeNull();
   });
 
+  it("says '1 point' on the summary when the score is exactly one", async () => {
+    const { getByTestId, findAllByTestId, getByText, getByPlaceholderText } =
+      await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+    await fireEvent.press(await findChoice(getByTestId, findAllByTestId, true));
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(getByText('1 point')).toBeTruthy();
+    });
+  });
+
+  it("says 'points' on the summary for any other score", async () => {
+    const { getByTestId, getByText, getByPlaceholderText } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Lin');
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(getByText('0 points')).toBeTruthy();
+    });
+  });
+
   it('navigates to the leaderboard from the score summary', async () => {
     const navigation = makeNavigation();
     const { getByTestId, getByText, getByPlaceholderText } = await renderGameScreen(navigation);

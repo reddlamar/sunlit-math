@@ -35,6 +35,9 @@ export const AnswerGrid = memo(function AnswerGrid({
 
 const styles = StyleSheet.create({
   choices: {
+    width: '100%',
+    maxWidth: 440,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',

@@ -6,14 +6,17 @@ export const fontFamily = {
   extraBold: 'Baloo2_800ExtraBold',
 };
 
+// Every button fill below carries white text, so each one keeps at least 3:1 contrast
+// against white (the WCAG minimum for large text). Small white labels on these fills are
+// sized at 19px bold or more so they count as large text. tokens.test.ts enforces the ratio.
 export const operationColors: Record<Operation, string> = {
-  addition: '#3DBE6C',
-  subtraction: '#FF9F45',
+  addition: '#36A75F',
+  subtraction: '#EB7200',
   multiplication: '#4D8DFF',
-  division: '#FF6B9D',
+  division: '#FF548E',
 };
 
-export const choiceColors: string[] = ['#5B4FCF', '#22B8CF', '#FF9F45', '#FF6B9D'];
+export const choiceColors: string[] = ['#5B4FCF', '#1EA3B7', '#EB7200', '#FF548E'];
 
 export type ColorTokens = {
   background: string;
