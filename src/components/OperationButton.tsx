@@ -33,11 +33,7 @@ export function OperationButton({
       accessibilityRole="button"
       accessibilityLabel={locked ? `${label} (locked, unlock to play)` : label}
       wrapperStyle={styles.wrapper}
-      style={[
-        styles.button,
-        { backgroundColor: operationColors[operation] },
-        locked && styles.buttonLocked,
-      ]}
+      style={[styles.button, { backgroundColor: operationColors[operation] }]}
       onPress={handlePress}
     >
       <Animated.View style={[styles.content, shakeStyle]}>
@@ -82,15 +78,21 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
-  buttonLocked: {
-    opacity: 0.55,
-  },
+  // Locked buttons keep their full color: fading the fill would drop the white label
+  // below readable contrast. The lock badge carries the locked state instead.
   lockBadge: {
     position: 'absolute',
     top: 10,
     right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...cardShadow({ elevation: 2, opacity: 0.2, radius: 3, offsetHeight: 1 }),
   },
   lockIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
 });
