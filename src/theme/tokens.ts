@@ -55,8 +55,10 @@ export const light: ColorTokens = {
   error: '#E4572E',
   accent: '#5B4FCF',
   border: '#E6E1D6',
-  timer: '#22B8CF',
-  streak: '#FF9F45',
+  // Timer and streak are darker than the answer-button cyan and orange so their numbers
+  // clear 3:1 on the cream page (tokens.test.ts checks both themes).
+  timer: '#19899A',
+  streak: '#D66800',
   streakSoft: '#FFF1E6',
   danger: '#D92D20',
 };
