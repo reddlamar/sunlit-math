@@ -33,6 +33,13 @@ function rememberUnlock(): Promise<void> {
   return AsyncStorage.setItem(STORAGE_KEY, 'true').catch(() => {});
 }
 
+function ignoreFailure(request: Promise<unknown> | void): Promise<void> {
+  return Promise.resolve(request).then(
+    () => undefined,
+    () => undefined
+  );
+}
+
 function ownsUnlock(purchases: Purchase[]): boolean {
   return purchases.some((entry) => entry.productId === UNLOCK_ALL_OPERATIONS_SKU);
 }
@@ -84,8 +91,11 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
     if (!connected) {
       return;
     }
-    fetchProducts({ skus: [UNLOCK_ALL_OPERATIONS_SKU], type: 'in-app' });
-    getAvailablePurchases();
+    // These only fill in the price and what is already owned. The store can be
+    // unreachable (no Play Store, offline), and that must leave the app usable and
+    // locked rather than surface as an uncaught promise rejection.
+    ignoreFailure(fetchProducts({ skus: [UNLOCK_ALL_OPERATIONS_SKU], type: 'in-app' }));
+    ignoreFailure(getAvailablePurchases());
     hasPaidDownload().then((paid) => {
       if (paid) {
         markUnlocked();

@@ -4,7 +4,8 @@ import { fontFamily, staticColors } from '../theme/tokens';
 /**
  * Styles every modal card (Get Ready, name entry, parental gate, unlock) shares, so
  * they look like one family and a tweak is made once. Colors that depend on the theme
- * are applied by each component; these hold only layout and typography.
+ * (including the error red) are applied by each component; these hold only layout and
+ * typography.
  */
 export const modalStyles = StyleSheet.create({
   emoji: {
@@ -31,11 +32,9 @@ export const modalStyles = StyleSheet.create({
     marginBottom: 16,
   },
   inputError: {
-    borderColor: staticColors.danger,
     marginBottom: 6,
   },
   errorText: {
-    color: staticColors.danger,
     fontSize: 13,
     marginBottom: 12,
   },

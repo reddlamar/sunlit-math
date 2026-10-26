@@ -29,6 +29,12 @@ describe('RoundSummary', () => {
     expect(getByText('12 points')).toBeTruthy();
   });
 
+  it('centers the title and score so a long, wrapping name stays centered', async () => {
+    const { getByText } = await renderSummary({ name: 'ABCDEFGHIJKLMNOPQRST' });
+    expect(hasStyleValue(getByText('Nice work, ABCDEFGHIJKLMNOPQRST!').props.style, 'textAlign', 'center')).toBe(true);
+    expect(hasStyleValue(getByText('12 points').props.style, 'textAlign', 'center')).toBe(true);
+  });
+
   it('colors the score by operation', async () => {
     const { getByText } = await renderSummary();
     expect(hasStyleValue(getByText('12 points').props.style, 'color', operationColors.division)).toBe(true);

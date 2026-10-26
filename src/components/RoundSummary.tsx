@@ -62,16 +62,20 @@ const styles = StyleSheet.create({
     fontSize: 56,
     marginBottom: 8,
   },
+  // alignItems centers each Text's box, but a name long enough to wrap makes the box
+  // full-width and its lines default to left-aligned, so centering must be explicit.
   title: {
     fontSize: 24,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
+    textAlign: 'center',
     marginBottom: 8,
   },
   score: {
     fontSize: 40,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
+    textAlign: 'center',
     marginBottom: 32,
   },
   buttonWrapper: {

@@ -76,7 +76,7 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
           modalStyles.input,
           styles.input,
           { borderColor: colors.border, color: colors.textPrimary },
-          error && modalStyles.inputError,
+          error && [modalStyles.inputError, { borderColor: colors.danger }],
         ]}
         placeholder="Your name"
         value={name}
@@ -84,7 +84,7 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
         maxLength={MAX_NAME_LENGTH}
         autoCapitalize="words"
       />
-      {error && <Text style={modalStyles.errorText}>{error}</Text>}
+      {error && <Text style={[modalStyles.errorText, { color: colors.danger }]}>{error}</Text>}
       <AnimatedPressable
         testID="save-button"
         accessibilityRole="button"

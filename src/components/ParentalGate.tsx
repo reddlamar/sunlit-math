@@ -50,7 +50,7 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
           modalStyles.input,
           styles.input,
           { borderColor: colors.border, color: colors.textPrimary },
-          error && modalStyles.inputError,
+          error && [modalStyles.inputError, { borderColor: colors.danger }],
         ]}
         value={answer}
         onChangeText={setAnswer}
@@ -59,7 +59,11 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
         maxLength={3}
         autoCorrect={false}
       />
-      {error && <Text style={[modalStyles.errorText, modalStyles.centeredText]}>{error}</Text>}
+      {error && (
+        <Text style={[modalStyles.errorText, modalStyles.centeredText, { color: colors.danger }]}>
+          {error}
+        </Text>
+      )}
       <AnimatedPressable
         testID="parental-gate-submit"
         accessibilityRole="button"

@@ -294,4 +294,25 @@ describe('PurchaseProvider', () => {
       });
     });
   });
+
+  describe('when the store is unavailable', () => {
+    it('keeps running without unhandled rejections when the store calls fail', async () => {
+      const unhandled: unknown[] = [];
+      const record = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', record);
+      mockStore({
+        fetchProducts: jest.fn().mockRejectedValue(new Error('Failed to query product')),
+        getAvailablePurchases: jest.fn().mockRejectedValue(new Error('Play Store service is not connected')),
+      });
+
+      const { findByText } = await renderProbe();
+      expect(await findByText('locked')).toBeTruthy();
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+
+      process.off('unhandledRejection', record);
+      expect(unhandled).toEqual([]);
+    });
+  });
 });

@@ -43,6 +43,7 @@ npm run android    # build and run the Android dev client
 | [Architecture](docs/architecture.md) | Layers, dependency rules, design patterns and the main modules |
 | [How the app was developed](docs/development-process.md) | Tech stack, development workflow, testing strategy, CI and release process |
 | [Refactoring log](docs/refactoring-log.md) | The `source-code-improvements` plan, every change, and why it was made |
+| [End-to-end test plan](docs/e2e-test-plan.md) and [report](docs/e2e-test-report.md) | The cases run on iOS and Android, results, bugs found and how they were fixed |
 | [iOS manual test checklist](docs/ios-manual-test-checklist.md) | Manual release checks that automated tests can't cover |
 
 ## Support

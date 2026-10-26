@@ -54,7 +54,9 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
             {price ? ` of ${price}` : ''}.
           </Text>
           {lastError && (
-            <Text style={[modalStyles.errorText, modalStyles.centeredText]}>{lastError}</Text>
+            <Text style={[modalStyles.errorText, modalStyles.centeredText, { color: colors.danger }]}>
+              {lastError}
+            </Text>
           )}
           <AnimatedPressable
             testID="unlock-purchase-button"

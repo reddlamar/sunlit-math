@@ -17,8 +17,6 @@ export const operationColors: Record<Operation, string> = {
 export const staticColors = {
   /** Text and icons drawn on top of a saturated button fill. */
   onColor: '#FFFFFF',
-  /** Validation errors, such as an empty name or a wrong parental-gate answer. */
-  danger: '#D92D20',
   /** Secondary round controls, like Restart, that shouldn't compete with Pause. */
   neutralControl: '#8B95A1',
   /** The splash screen background; matches the native splash in app.json. */
@@ -41,6 +39,8 @@ export type ColorTokens = {
   timer: string;
   streak: string;
   streakSoft: string;
+  /** Validation errors: an empty name, a wrong parental-gate answer, a failed purchase. */
+  danger: string;
 };
 
 export const light: ColorTokens = {
@@ -55,6 +55,7 @@ export const light: ColorTokens = {
   timer: '#22B8CF',
   streak: '#FF9F45',
   streakSoft: '#FFF1E6',
+  danger: '#D92D20',
 };
 
 // Cozy bedtime palette, not a muted dev-tool dark mode — warm plum background,
@@ -71,4 +72,6 @@ export const dark: ColorTokens = {
   timer: '#3FD4EC',
   streak: '#FFB870',
   streakSoft: '#4A2E1F',
+  // Lighter than light's red: #D92D20 is only 2.95:1 on the dark modal surface.
+  danger: '#FF8A7A',
 };
