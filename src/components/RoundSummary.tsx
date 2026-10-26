@@ -30,7 +30,7 @@ export function RoundSummary({
       <View style={styles.content}>
         <Text style={styles.emoji}>🎉</Text>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Nice work, {name}!</Text>
-        <Text style={[styles.score, { color: operationColors[operation] }]}>{score} points</Text>
+        <Text style={[styles.score, { color: operationColors[operation] }]}>{score} {Math.abs(score) === 1 ? 'point' : 'points'}</Text>
         <AnimatedPressable
           testID="play-again-button"
           accessibilityRole="button"
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   },
   buttonLabel: {
     color: staticColors.onColor,
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

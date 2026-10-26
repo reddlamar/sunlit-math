@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addScore, getAllScores, getTopScores } from './scoresRepository';
+import {
+  addScore,
+  getAllScores,
+  getLastPlayerName,
+  getTopScores,
+  setLastPlayerName,
+} from './scoresRepository';
 import type { ScoreEntry } from '../types/game';
 
 function makeEntry(overrides: Partial<ScoreEntry>): ScoreEntry {
@@ -50,6 +56,33 @@ describe('scoresRepository', () => {
     expect(scores[0].score).toBe(15);
   });
 
+  it('filters top scores by difficulty, leaving out scores saved before difficulty was recorded', async () => {
+    await addScore(makeEntry({ id: 'a', score: 10, difficulty: 'easy' }));
+    await addScore(makeEntry({ id: 'b', score: 20, difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'c', score: 30 }));
+
+    const hard = await getTopScores(10, undefined, 'hard');
+    expect(hard.map((s) => s.id)).toEqual(['b']);
+
+    const all = await getTopScores(10);
+    expect(all.map((s) => s.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('combines the operation and difficulty filters', async () => {
+    await addScore(makeEntry({ id: 'a', score: 10, operation: 'addition', difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'b', score: 20, operation: 'division', difficulty: 'hard' }));
+    await addScore(makeEntry({ id: 'c', score: 30, operation: 'division', difficulty: 'easy' }));
+
+    const scores = await getTopScores(10, 'division', 'hard');
+    expect(scores.map((s) => s.id)).toEqual(['b']);
+  });
+
+  it('remembers the last player name, defaulting to empty', async () => {
+    expect(await getLastPlayerName()).toBe('');
+    await setLastPlayerName('Ada');
+    expect(await getLastPlayerName()).toBe('Ada');
+  });
+
   describe('resilience', () => {
     const KEY = 'math60_scores_v1';
 
@@ -72,6 +105,23 @@ describe('scoresRepository', () => {
         JSON.stringify([good, null, { id: 1 }, { ...good, id: 'x', score: 'NaN' }, { ...good, operation: 'power' }])
       );
       expect(await getAllScores()).toEqual([good]);
+    });
+
+    it('keeps scores saved before difficulty existed, but drops an invalid difficulty', async () => {
+      const old = makeEntry({ id: 'old', score: 2 });
+      const valid = makeEntry({ id: 'valid', score: 3, difficulty: 'hard' });
+      await AsyncStorage.setItem(
+        KEY,
+        JSON.stringify([old, valid, { ...valid, id: 'bad', difficulty: 'impossible' }])
+      );
+      expect((await getAllScores()).map((entry) => entry.id)).toEqual(['old', 'valid']);
+    });
+
+    it('treats the remembered name as optional storage that may fail', async () => {
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+      expect(await getLastPlayerName()).toBe('');
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('full'));
+      await expect(setLastPlayerName('Ada')).resolves.toBeUndefined();
     });
 
     it('returns no scores when storage itself fails to read', async () => {

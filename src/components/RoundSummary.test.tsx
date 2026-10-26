@@ -35,6 +35,16 @@ describe('RoundSummary', () => {
     expect(hasStyleValue(getByText('12 points').props.style, 'textAlign', 'center')).toBe(true);
   });
 
+  it.each([
+    [1, '1 point'],
+    [-1, '-1 point'],
+    [0, '0 points'],
+    [12, '12 points'],
+  ])('says "%s points" with the right singular or plural', async (score, text) => {
+    const { getByText } = await renderSummary({ score });
+    expect(getByText(text)).toBeTruthy();
+  });
+
   it('colors the score by operation', async () => {
     const { getByText } = await renderSummary();
     expect(hasStyleValue(getByText('12 points').props.style, 'color', operationColors.division)).toBe(true);

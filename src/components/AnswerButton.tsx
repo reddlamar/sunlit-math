@@ -34,12 +34,14 @@ export const AnswerButton = memo(function AnswerButton({
 });
 
 const styles = StyleSheet.create({
+  // Two per row, always: the grid is a fixed 2x2 so four choices never wrap 3+1
+  // on narrower phones.
   wrapper: {
-    margin: 8,
+    width: '50%',
+    padding: 8,
   },
   button: {
-    minWidth: 92,
-    minHeight: 72,
+    minHeight: 96,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   label: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     color: staticColors.onColor,

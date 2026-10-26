@@ -2,17 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
-import { OPERATIONS } from '../game/operations';
+import { OPERATIONS, operationInfo } from '../game/operations';
 import { getTopScores } from '../storage/scoresRepository';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import type { LeaderboardScreenProps } from '../navigation/types';
-import type { Operation, ScoreEntry } from '../types/game';
+import type { Difficulty, Operation, ScoreEntry } from '../types/game';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
+const LEVEL_LABELS: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+const LEVEL_FILTERS: { difficulty?: Difficulty; label: string }[] = [
+  { difficulty: undefined, label: 'All levels' },
+  { difficulty: 'easy', label: 'Easy' },
+  { difficulty: 'medium', label: 'Medium' },
+  { difficulty: 'hard', label: 'Hard' },
+];
+
 export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps) {
   const [operation, setOperation] = useState<Operation | undefined>(route.params?.operation);
+  const [difficulty, setDifficulty] = useState<Difficulty | undefined>(undefined);
   const [scores, setScores] = useState<ScoreEntry[]>([]);
   const { colors } = useSettings();
 
@@ -27,7 +36,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
 
   useEffect(() => {
     let cancelled = false;
-    getTopScores(10, operation).then((results) => {
+    getTopScores(10, operation, difficulty).then((results) => {
       if (!cancelled) {
         setScores(results);
       }
@@ -35,7 +44,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
     return () => {
       cancelled = true;
     };
-  }, [operation]);
+  }, [operation, difficulty]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -73,6 +82,32 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
         })}
       </View>
 
+      <View style={styles.levelRow}>
+        {LEVEL_FILTERS.map(({ difficulty: levelValue, label }) => {
+          const active = difficulty === levelValue;
+          return (
+            <Pressable
+              key={label}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`Show ${label}`}
+              style={styles.levelTab}
+              onPress={() => setDifficulty(levelValue)}
+            >
+              <Text
+                style={[
+                  styles.levelLabel,
+                  { color: active ? colors.accent : colors.textSecondary },
+                  active && styles.levelLabelActive,
+                ]}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {scores.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🎯</Text>
@@ -92,7 +127,13 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
               ]}
             >
               <Text style={styles.rank}>{MEDALS[index] ?? `${index + 1}.`}</Text>
-              <Text style={[styles.name, { color: colors.textPrimary }]}>{item.name}</Text>
+              <View style={styles.nameBlock}>
+                <Text style={[styles.name, { color: colors.textPrimary }]}>{item.name}</Text>
+                <Text style={[styles.detail, { color: colors.textSecondary }]}>
+                  {operationInfo(item.operation).symbol}
+                  {item.difficulty ? ` · ${LEVEL_LABELS[item.difficulty]}` : ''}
+                </Text>
+              </View>
               <Text style={[styles.score, { color: operationColors[item.operation] }]}>
                 {item.score}
               </Text>
@@ -140,7 +181,23 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    fontSize: 16,
+    fontSize: 19,
+  },
+  levelRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  levelTab: {
+    marginRight: 18,
+    paddingVertical: 4,
+  },
+  levelLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: fontFamily.regular,
+  },
+  levelLabelActive: {
+    fontFamily: fontFamily.extraBold,
   },
   emptyState: {
     flex: 1,
@@ -169,8 +226,15 @@ const styles = StyleSheet.create({
     width: 36,
     fontSize: 20,
   },
-  name: {
+  nameBlock: {
     flex: 1,
+  },
+  detail: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: fontFamily.regular,
+  },
+  name: {
     fontSize: 16,
     fontWeight: '700',
     fontFamily: fontFamily.bold,

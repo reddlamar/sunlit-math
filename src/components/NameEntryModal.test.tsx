@@ -14,6 +14,8 @@ describe('NameEntryModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+    jest.mocked(scoresRepository.getLastPlayerName).mockResolvedValue('');
+    jest.mocked(scoresRepository.setLastPlayerName).mockResolvedValue(undefined);
   });
 
   it("greets the player with their score", async () => {
@@ -145,5 +147,52 @@ describe('NameEntryModal', () => {
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect(queryByText(/couldn't be saved/)).toBeNull();
+  });
+
+  it("prefills the field with the last player's name", async () => {
+    jest.mocked(scoresRepository.getLastPlayerName).mockResolvedValue('Ada');
+
+    const { getByPlaceholderText } = await renderNameEntryModal(
+      <NameEntryModal visible score={3} operation="addition" onSaved={jest.fn()} />
+    );
+
+    await waitFor(() => {
+      expect(getByPlaceholderText('Your name').props.value).toBe('Ada');
+    });
+  });
+
+  it('does not overwrite a name that is already being typed with the remembered one', async () => {
+    let resolveName: (name: string) => void = () => {};
+    jest.mocked(scoresRepository.getLastPlayerName).mockReturnValue(
+      new Promise<string>((resolve) => {
+        resolveName = resolve;
+      })
+    );
+
+    const { getByPlaceholderText } = await renderNameEntryModal(
+      <NameEntryModal visible score={3} operation="addition" onSaved={jest.fn()} />
+    );
+    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Lin');
+    await act(async () => {
+      resolveName('Ada');
+    });
+
+    expect(getByPlaceholderText('Your name').props.value).toBe('Lin');
+  });
+
+  it('remembers the saved name and records the current difficulty on the score', async () => {
+    const { getByPlaceholderText, getByText } = await renderNameEntryModal(
+      <NameEntryModal visible score={7} operation="addition" onSaved={jest.fn()} />
+    );
+
+    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => {
+      expect(scoresRepository.setLastPlayerName).toHaveBeenCalledWith('Ada');
+    });
+    expect(scoresRepository.addScore).toHaveBeenCalledWith(
+      expect.objectContaining({ difficulty: 'easy' })
+    );
   });
 });

@@ -64,6 +64,31 @@ describe('theme tokens', () => {
     expect(choiceColors.length).toBeGreaterThan(0);
   });
 
+  describe('contrast of white text on button fills', () => {
+    function luminance(hex: string): number {
+      const [r, g, b] = [1, 3, 5].map((i) => {
+        const channel = parseInt(hex.slice(i, i + 2), 16) / 255;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    const contrastWithWhite = (hex: string) => 1.05 / (luminance(hex) + 0.05);
+
+    it.each(Object.entries(operationColors))(
+      'keeps the %s fill at 3:1 or better against white',
+      (_operation, color) => {
+        expect(contrastWithWhite(color)).toBeGreaterThanOrEqual(3);
+      }
+    );
+
+    it.each(choiceColors.map((color, index) => [index, color] as const))(
+      'keeps answer choice color %i at 3:1 or better against white',
+      (_index, color) => {
+        expect(contrastWithWhite(color)).toBeGreaterThanOrEqual(3);
+      }
+    );
+  });
+
   it('keeps the splash color in sync with the native splash configured in app.json', () => {
     const appConfig = require('../../app.json');
     const splashPlugin = appConfig.expo.plugins.find(

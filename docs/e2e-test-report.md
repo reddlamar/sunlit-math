@@ -110,10 +110,10 @@ Cases are defined in [e2e-test-plan.md](e2e-test-plan.md). Run on 2026-10-26 aga
   rectangle. `headerBanner` now has `borderRadius: 12` so it reads as a deliberate strip, with a
   test on the `home-banner` image. This was checked by unit test only, not re-run on a device.
   The cleaner long-term fix is a transparent banner asset from the designer.
-- **Answer grid and locked buttons (left for PR #13).** On `main` the four answers wrap 3 + 1 and
-  locked buttons are dimmed to 55% opacity, which makes their labels low contrast. Both are
-  already fixed in the held 1.2.2 work (PR #13: 2 × 2 grid, full-color locked buttons with a
-  white lock badge), which stays off `main` until 1.2.1 clears review.
+- **Answer grid and locked buttons (since fixed by the 1.2.2 merge).** At the time of testing,
+  `main` wrapped the four answers 3 + 1 and dimmed locked buttons to 55% opacity. PR #13 (2 × 2
+  grid, full-color locked buttons with a white lock badge) has since merged into `main` and into
+  this branch, so these results were recorded against the pre-1.2.2 layout.
 - **Dropped taps during automation.** A few back-to-back taps from the simulator tool within
   about 100 ms were ignored, and a gate answer submitted within 100 ms of typing was judged wrong.
   Repeating each action with normal spacing worked every time, and a person cannot act that

@@ -17,7 +17,7 @@ rules behind each part. File paths point at where each rule lives in the code.
    seconds counter run down from 60. Tapping an answer immediately shows the next
    question. The player can pause, resume, or restart (with a confirmation).
 5. **Time's up.** The round ends and the player is asked for a name (up to 20
-   characters), which saves the score.
+   characters), which saves the score. The last name used is filled in for them.
 6. **Summary.** "Nice work, *name*!" with the score, plus **Play Again** and
    **View Leaderboard**.
 
@@ -37,8 +37,8 @@ The largest number used depends on the difficulty chosen in Settings:
 - **Subtraction** never produces a negative answer.
 - **Division** is always exact and never divides by zero: the question is built from
   the answer (`divisor × answer ÷ divisor`).
-- Every question has **four distinct, non-negative choices**: the right answer plus
-  three wrong ones that fall near it. How near depends on the operation, so wrong
+- Every question has **four distinct, non-negative choices**, shown in a fixed 2 × 2 grid: the
+  right answer plus three wrong ones that fall near it. How near depends on the operation, so wrong
   answers look plausible.
 
 ### Scoring
@@ -106,7 +106,9 @@ answer grid. Sound can be turned off in Settings (haptics stay on).
 
 Scores are stored only on the device. The leaderboard shows the top 10, highest
 first, with gold/silver/bronze medals for the first three, and can be filtered by
-operation. Nothing is sent anywhere; see the [privacy policy](privacy-policy.html).
+operation and by difficulty level (All levels, Easy, Medium, Hard). Each row shows the
+operation and level the score was earned on. Scores saved before 1.2.2 have no level; they
+appear under "All levels" only. Nothing is sent anywhere; see the [privacy policy](privacy-policy.html).
 
 ## Data stored on the device
 
@@ -114,7 +116,8 @@ All keys live in AsyncStorage:
 
 | Key | Contents |
 | --- | --- |
-| `math60_scores_v1` | List of `{ id, name, score, operation, createdAt }` |
+| `math60_scores_v1` | List of `{ id, name, score, operation, difficulty?, createdAt }` |
+| `math60_last_name_v1` | The last player name, used to prefill the name card |
 | `math60_settings_v1` | `{ muted, theme, difficulty }` (`theme` is `null` until chosen) |
 | `math60_unlocked_v1` | `"true"` once the unlock is owned |
 

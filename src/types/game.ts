@@ -22,6 +22,8 @@ export type ScoreEntry = {
   name: string;
   score: number;
   operation: Operation;
+  // Optional: scores saved before 1.2.2 have no difficulty recorded.
+  difficulty?: Difficulty;
   createdAt: number;
 };
 

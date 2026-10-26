@@ -66,7 +66,7 @@ describe('LeaderboardScreen', () => {
 
     expect(await findByText('Ada')).toBeTruthy();
     expect(await findByText('Lin')).toBeTruthy();
-    expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, undefined);
+    expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, undefined, undefined);
   });
 
   it('refetches filtered by operation when a filter tab is tapped', async () => {
@@ -81,7 +81,40 @@ describe('LeaderboardScreen', () => {
     await fireEvent.press(getByText('×'));
 
     await waitFor(() => {
-      expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, 'multiplication');
+      expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, 'multiplication', undefined);
     });
+  });
+
+  it('refetches filtered by difficulty when a level is tapped, keeping the operation filter', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
+
+    const { findByText, getByText } = await renderLeaderboard(
+      {} as LeaderboardScreenProps['navigation'],
+      makeRoute('division')
+    );
+    await findByText(/No scores yet/);
+
+    await fireEvent.press(getByText('Hard'));
+
+    await waitFor(() => {
+      expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, 'division', 'hard');
+    });
+  });
+
+  it('labels each row with its operation and level, and omits the level for older scores', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([
+      { id: '1', name: 'Ada', score: 20, operation: 'addition', difficulty: 'hard', createdAt: 1 },
+      { id: '2', name: 'Lin', score: 15, operation: 'division', createdAt: 2 },
+    ]);
+
+    const { findByText, getAllByText, queryByText } = await renderLeaderboard(
+      {} as LeaderboardScreenProps['navigation'],
+      makeRoute()
+    );
+
+    expect(await findByText('+ · Hard')).toBeTruthy();
+    // The older score shows just its operation: the '÷' in the filter row plus its own row.
+    expect(getAllByText('÷')).toHaveLength(2);
+    expect(queryByText(/÷ ·/)).toBeNull();
   });
 });
