@@ -105,13 +105,15 @@ Cases are defined in [e2e-test-plan.md](e2e-test-plan.md). Run on 2026-10-26 aga
 
 ## Observations (not changed)
 
-- **Dark-mode banner.** The Home banner image has an opaque cream background, so it shows as a
-  light rectangle on the dark Home screen. Fixing it needs a transparent asset or a design
-  decision, so it is left for the designer.
-- **Answer grid layout.** On `main` the four answers wrap 3 + 1. The 2 × 2 grid is part of the
-  held 1.2.2 work, not this branch.
-- **Locked buttons.** On `main` they are dimmed to 55% opacity, which makes the labels low
-  contrast; the held 1.2.2 work changes this.
+- **Dark-mode banner (fixed, BUG-4).** The Home banner image has an opaque cream background
+  (exactly the light theme's page color), so on the dark theme it showed as a plain light
+  rectangle. `headerBanner` now has `borderRadius: 12` so it reads as a deliberate strip, with a
+  test on the `home-banner` image. This was checked by unit test only, not re-run on a device.
+  The cleaner long-term fix is a transparent banner asset from the designer.
+- **Answer grid and locked buttons (left for PR #13).** On `main` the four answers wrap 3 + 1 and
+  locked buttons are dimmed to 55% opacity, which makes their labels low contrast. Both are
+  already fixed in the held 1.2.2 work (PR #13: 2 × 2 grid, full-color locked buttons with a
+  white lock badge), which stays off `main` until 1.2.1 clears review.
 - **Dropped taps during automation.** A few back-to-back taps from the simulator tool within
   about 100 ms were ignored, and a gate answer submitted within 100 ms of typing was judged wrong.
   Repeating each action with normal spacing worked every time, and a person cannot act that

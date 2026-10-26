@@ -9,6 +9,7 @@ import { PurchaseProvider } from '../purchases/PurchaseContext';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { addScore } from '../storage/scoresRepository';
 import { passParentalGate } from '../testUtils/parentalGate';
+import { hasStyleValue } from '../testUtils/styleAssertions';
 import type { GameScreenProps, HomeScreenProps, RootStackParamList } from '../navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -118,5 +119,13 @@ describe('HomeScreen top score', () => {
     await fireEvent.press(await findByText('finish game'));
 
     expect(await findByText('Ada · 12')).toBeTruthy();
+  });
+
+  it('rounds the banner so its opaque cream background reads as a deliberate strip in dark mode', async () => {
+    const { findByTestId } = await renderHomeScreen();
+
+    const banner = await findByTestId('home-banner');
+
+    expect(hasStyleValue(banner.props.style, 'borderRadius', 12)).toBe(true);
   });
 });

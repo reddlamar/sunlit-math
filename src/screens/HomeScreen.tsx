@@ -49,6 +49,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Image
+          testID="home-banner"
           source={require('../../assets/home-header-banner.png')}
           style={styles.headerBanner}
           resizeMode="contain"
@@ -117,10 +118,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
   },
+  // The artwork has an opaque cream background (the light theme's page color), so on
+  // the dark theme it shows as a strip; rounded corners make that look intentional.
   headerBanner: {
     flex: 1,
     aspectRatio: 7,
     marginRight: 16,
+    borderRadius: 12,
   },
   leaderboardIcon: {
     fontSize: 28,
