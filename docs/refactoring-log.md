@@ -178,6 +178,9 @@ confirming it fails.
   behavior gain.
 - **Pre-existing `act(...)` warnings** appear in a few purchase tests. They come from
   the store mock resolving after the test finishes and don't affect results.
+- **`@types/node` is not a direct dev dependency.** The architecture test reads source
+  files with `fs`, so it references Node's types, which arrive transitively through
+  Jest and Expo. Declaring it explicitly would be tidier but needs a lockfile change.
 - **`useGameTimer.isRunning` and `sounds.isMuted`** are only used by tests. They are
   small, part of each module's public surface, and harmless.
 
