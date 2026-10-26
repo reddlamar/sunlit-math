@@ -2,15 +2,11 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { SettingsScreen } from './SettingsScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
-import type { SettingsScreenProps } from '../navigation/types';
 
 function renderSettingsScreen() {
   return render(
     <SettingsProvider>
-      <SettingsScreen
-        navigation={{} as SettingsScreenProps['navigation']}
-        route={{} as SettingsScreenProps['route']}
-      />
+      <SettingsScreen />
     </SettingsProvider>
   );
 }

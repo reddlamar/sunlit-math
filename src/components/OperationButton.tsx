@@ -2,7 +2,7 @@ import React from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { useShake } from './useShake';
-import { fontFamily, operationColors } from '../theme/tokens';
+import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { Operation } from '../types/game';
 
@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
     fontSize: 52,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: '#FFFFFF',
+    color: staticColors.onColor,
   },
   label: {
     marginTop: 8,
     fontSize: 16,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-    color: '#FFFFFF',
+    color: staticColors.onColor,
   },
   buttonLocked: {
     opacity: 0.55,

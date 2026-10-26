@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { PurchaseProvider } from './src/purchases/PurchaseContext';
 import { SettingsProvider, useSettings } from './src/settings/SettingsContext';
+import { staticColors } from './src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -67,7 +68,7 @@ function ThemedStatusBar() {
 const styles = StyleSheet.create({
   splash: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#0A1F44',
+    backgroundColor: staticColors.splash,
     alignItems: 'center',
     justifyContent: 'center',
   },

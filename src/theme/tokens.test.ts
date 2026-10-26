@@ -1,4 +1,11 @@
-import { light, dark, operationColors, choiceColors, type ColorTokens } from './tokens';
+import {
+  light,
+  dark,
+  operationColors,
+  choiceColors,
+  staticColors,
+  type ColorTokens,
+} from './tokens';
 
 const TOKEN_KEYS: (keyof ColorTokens)[] = [
   'background',
@@ -41,5 +48,13 @@ describe('theme tokens', () => {
       'division',
     ]);
     expect(choiceColors.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the splash color in sync with the native splash configured in app.json', () => {
+    const appConfig = require('../../app.json');
+    const splashPlugin = appConfig.expo.plugins.find(
+      (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen'
+    );
+    expect(splashPlugin[1].backgroundColor).toBe(staticColors.splash);
   });
 });

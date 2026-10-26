@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { OperationButton } from '../components/OperationButton';
 import { UnlockModal } from '../components/UnlockModal';
+import { OPERATIONS } from '../game/operations';
 import { getTopScores } from '../storage/scoresRepository';
 import { isOperationLocked } from '../purchases/entitlements';
 import { usePurchase } from '../purchases/PurchaseContext';
@@ -13,13 +14,6 @@ import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
-
-const OPERATIONS: { operation: Operation; symbol: string; label: string }[] = [
-  { operation: 'addition', symbol: '+', label: 'Addition' },
-  { operation: 'subtraction', symbol: '−', label: 'Subtraction' },
-  { operation: 'multiplication', symbol: '×', label: 'Multiplication' },
-  { operation: 'division', symbol: '÷', label: 'Division' },
-];
 
 export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const [topScore, setTopScore] = useState<ScoreEntry | null>(null);

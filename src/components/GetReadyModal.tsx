@@ -5,6 +5,7 @@ import { ModalCard } from './ModalCard';
 import { useGameTimer } from '../game/useGameTimer';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
+import { modalStyles } from './modalStyles';
 
 const COUNTDOWN_MS = 3000;
 
@@ -51,17 +52,17 @@ export function GetReadyModal({ visible, onReady, onExit }: GetReadyModalProps) 
     >
       {phase === 'intro' ? (
         <>
-          <Text style={styles.emoji}>⏱️</Text>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <Text style={modalStyles.emoji}>⏱️</Text>
+          <Text style={[modalStyles.title, styles.title, { color: colors.textPrimary }]}>
             You have 60 seconds — solve as many problems as you can!
           </Text>
           <AnimatedPressable
             testID="get-ready-start-button"
             accessibilityRole="button"
-            style={[styles.startButton, { backgroundColor: colors.accent }]}
+            style={[modalStyles.primaryButton, styles.startButton, { backgroundColor: colors.accent }]}
             onPress={handleStart}
           >
-            <Text style={styles.startLabel}>Start</Text>
+            <Text style={[modalStyles.primaryLabel, styles.startLabel]}>Start</Text>
           </AnimatedPressable>
           <AnimatedPressable
             testID="get-ready-exit-button"
@@ -69,7 +70,7 @@ export function GetReadyModal({ visible, onReady, onExit }: GetReadyModalProps) 
             style={styles.exitButton}
             onPress={onExit}
           >
-            <Text style={[styles.exitLabel, { color: colors.textSecondary }]}>Back</Text>
+            <Text style={[modalStyles.subtleLabel, { color: colors.textSecondary }]}>Back</Text>
           </AnimatedPressable>
         </>
       ) : (
@@ -82,36 +83,21 @@ export function GetReadyModal({ visible, onReady, onExit }: GetReadyModalProps) 
 }
 
 const styles = StyleSheet.create({
-  emoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
   title: {
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-    textAlign: 'center',
     marginBottom: 20,
   },
   startButton: {
-    borderRadius: 18,
-    paddingVertical: 14,
     paddingHorizontal: 40,
   },
   startLabel: {
-    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700',
-    fontFamily: fontFamily.bold,
   },
   exitButton: {
     marginTop: 16,
     paddingVertical: 4,
-  },
-  exitLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: fontFamily.regular,
   },
   countdown: {
     fontSize: 72,

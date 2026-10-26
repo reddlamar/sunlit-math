@@ -44,7 +44,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "private": true,
   "jest": {
@@ -60,6 +61,18 @@
         "statements": 90
       },
       "./src/storage/": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/settings/": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/utils/": {
         "branches": 90,
         "functions": 90,
         "lines": 90,

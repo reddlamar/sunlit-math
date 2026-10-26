@@ -2,10 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addScore, getAllScores, getTopScores } from './scoresRepository';
 import type { ScoreEntry } from '../types/game';
 
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
-);
-
 function makeEntry(overrides: Partial<ScoreEntry>): ScoreEntry {
   return {
     id: 'id',

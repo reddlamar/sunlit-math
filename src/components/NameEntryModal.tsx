@@ -3,12 +3,15 @@ import { StyleSheet, Text, TextInput } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { ModalCard } from './ModalCard';
 import { useSettings } from '../settings/SettingsContext';
-import { fontFamily } from '../theme/tokens';
+import { fontFamily, operationColors } from '../theme/tokens';
+import { modalStyles } from './modalStyles';
+import { createId } from '../utils/random';
 import { addScore } from '../storage/scoresRepository';
 import type { Operation, ScoreEntry } from '../types/game';
 
 const MAX_NAME_LENGTH = 20;
 const REQUIRED_ERROR = 'Name is required';
+const SAVE_FAILED_ERROR = "Your score couldn't be saved. Please try again.";
 
 type NameEntryModalProps = {
   visible: boolean;
@@ -42,8 +45,9 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
     }
     isSavingRef.current = true;
     setIsSaving(true);
+    setError(null);
     const entry: ScoreEntry = {
-      id: `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`,
+      id: createId(),
       name: trimmed,
       score,
       operation,
@@ -53,6 +57,8 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
       await addScore(entry);
       setName('');
       onSaved(entry);
+    } catch {
+      setError(SAVE_FAILED_ERROR);
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);
@@ -61,15 +67,16 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
 
   return (
     <ModalCard visible={visible}>
-      <Text style={styles.emoji}>🏁</Text>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>
+      <Text style={[modalStyles.emoji, modalStyles.centeredText]}>🏁</Text>
+      <Text style={[modalStyles.title, styles.title, { color: colors.textPrimary }]}>
         {`Time's up! You scored ${score} — what's your name?`}
       </Text>
       <TextInput
         style={[
+          modalStyles.input,
           styles.input,
           { borderColor: colors.border, color: colors.textPrimary },
-          error && styles.inputError,
+          error && modalStyles.inputError,
         ]}
         placeholder="Your name"
         value={name}
@@ -77,60 +84,31 @@ export function NameEntryModal({ visible, score, operation, onSaved }: NameEntry
         maxLength={MAX_NAME_LENGTH}
         autoCapitalize="words"
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={modalStyles.errorText}>{error}</Text>}
       <AnimatedPressable
         testID="save-button"
         accessibilityRole="button"
         disabled={isSaving}
-        style={[styles.saveButton, { opacity: isSaving ? 0.7 : 1 }]}
+        style={[modalStyles.primaryButton, styles.saveButton, { opacity: isSaving ? 0.7 : 1 }]}
         onPress={handleSave}
       >
-        <Text style={styles.saveLabel}>Save</Text>
+        <Text style={modalStyles.primaryLabel}>Save</Text>
       </AnimatedPressable>
     </ModalCard>
   );
 }
 
 const styles = StyleSheet.create({
-  emoji: {
-    fontSize: 40,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
   title: {
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
     marginBottom: 16,
-    textAlign: 'center',
   },
   input: {
-    borderWidth: 2,
-    borderRadius: 16,
-    padding: 12,
     fontSize: 16,
-    fontFamily: fontFamily.regular,
-    marginBottom: 16,
-  },
-  inputError: {
-    borderColor: '#D92D20',
-    marginBottom: 6,
-  },
-  errorText: {
-    color: '#D92D20',
-    fontSize: 13,
-    marginBottom: 12,
   },
   saveButton: {
-    backgroundColor: '#3DBE6C',
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: fontFamily.bold,
+    backgroundColor: operationColors.addition,
   },
 });

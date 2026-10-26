@@ -13,6 +13,20 @@ export const operationColors: Record<Operation, string> = {
   division: '#FF6B9D',
 };
 
+/** Colors that stay the same in light and dark mode. */
+export const staticColors = {
+  /** Text and icons drawn on top of a saturated button fill. */
+  onColor: '#FFFFFF',
+  /** Validation errors, such as an empty name or a wrong parental-gate answer. */
+  danger: '#D92D20',
+  /** Secondary round controls, like Restart, that shouldn't compete with Pause. */
+  neutralControl: '#8B95A1',
+  /** The splash screen background; matches the native splash in app.json. */
+  splash: '#0A1F44',
+  /** Dimmed area behind a modal card. */
+  backdrop: 'rgba(0,0,0,0.4)',
+} as const;
+
 export const choiceColors: string[] = ['#5B4FCF', '#22B8CF', '#FF9F45', '#FF6B9D'];
 
 export type ColorTokens = {

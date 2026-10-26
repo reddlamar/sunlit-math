@@ -7,12 +7,13 @@ import { AnswerGrid } from '../components/AnswerGrid';
 import { TimerBar } from '../components/TimerBar';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
+import { RoundSummary } from '../components/RoundSummary';
 import { GetReadyModal } from '../components/GetReadyModal';
 import { useShake } from '../components/useShake';
 import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
-import { fontFamily, operationColors } from '../theme/tokens';
+import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
@@ -105,31 +106,13 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
 
   if (savedEntry) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.summary}>
-          <Text style={styles.summaryEmoji}>🎉</Text>
-          <Text style={[styles.summaryTitle, { color: colors.textPrimary }]}>
-            Nice work, {savedEntry.name}!
-          </Text>
-          <Text style={[styles.summaryScore, { color: operationColors[operation] }]}>
-            {savedEntry.score} points
-          </Text>
-          <AnimatedPressable
-            testID="play-again-button"
-            accessibilityRole="button"
-            wrapperStyle={styles.primaryButtonWrapper}
-            style={[styles.primaryButton, { backgroundColor: operationColors[operation] }]}
-            onPress={handlePlayAgain}
-          >
-            <Text style={styles.primaryButtonLabel}>Play Again</Text>
-          </AnimatedPressable>
-          <AnimatedPressable accessibilityRole="button" onPress={handleViewLeaderboard}>
-            <Text style={[styles.secondaryButtonLabel, { color: colors.accent }]}>
-              View Leaderboard
-            </Text>
-          </AnimatedPressable>
-        </View>
-      </SafeAreaView>
+      <RoundSummary
+        name={savedEntry.name}
+        score={savedEntry.score}
+        operation={operation}
+        onPlayAgain={handlePlayAgain}
+        onViewLeaderboard={handleViewLeaderboard}
+      />
     );
   }
 
@@ -142,7 +125,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             {engine.score}
           </Text>
           <View style={styles.controls}>
-            {(engine.status === 'playing' || engine.status === 'paused') && (
+            {isRoundInProgress && (
               <AnimatedPressable
                 testID="restart-button"
                 accessibilityRole="button"
@@ -254,11 +237,11 @@ const styles = StyleSheet.create({
     ...cardShadow({ elevation: 3, opacity: 0.15, radius: 4 }),
   },
   restartButton: {
-    backgroundColor: '#8B95A1',
+    backgroundColor: staticColors.neutralControl,
   },
   controlIcon: {
     fontSize: 18,
-    color: '#FFFFFF',
+    color: staticColors.onColor,
   },
   problemArea: {
     flex: 1,
@@ -283,28 +266,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.extraBold,
     marginBottom: 24,
   },
-  summary: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  summaryEmoji: {
-    fontSize: 56,
-    marginBottom: 8,
-  },
-  summaryTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
-    marginBottom: 8,
-  },
-  summaryScore: {
-    fontSize: 40,
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
-    marginBottom: 32,
-  },
   primaryButtonWrapper: {
     marginBottom: 16,
   },
@@ -315,14 +276,9 @@ const styles = StyleSheet.create({
     ...cardShadow({ elevation: 6, opacity: 0.18, radius: 8 }),
   },
   primaryButtonLabel: {
-    color: '#FFFFFF',
+    color: staticColors.onColor,
     fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
-  },
-  secondaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: fontFamily.regular,
   },
 });

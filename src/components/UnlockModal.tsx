@@ -5,7 +5,8 @@ import { ModalCard } from './ModalCard';
 import { ParentalGate } from './ParentalGate';
 import { usePurchase } from '../purchases/PurchaseContext';
 import { useSettings } from '../settings/SettingsContext';
-import { fontFamily } from '../theme/tokens';
+import { staticColors } from '../theme/tokens';
+import { modalStyles } from './modalStyles';
 
 type UnlockModalProps = {
   visible: boolean;
@@ -46,27 +47,30 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
     <ModalCard visible={visible} onRequestClose={onClose} centered>
       {isGatePassed ? (
         <>
-          <Text style={styles.emoji}>🔓</Text>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Unlock All Operations</Text>
-          <Text style={[styles.body, { color: colors.textSecondary }]}>
+          <Text style={modalStyles.emoji}>🔓</Text>
+          <Text style={[modalStyles.title, { color: colors.textPrimary }]}>Unlock All Operations</Text>
+          <Text style={[modalStyles.body, styles.body, { color: colors.textSecondary }]}>
             Get subtraction, multiplication, and division for a one-time payment
             {price ? ` of ${price}` : ''}.
           </Text>
-          {lastError && <Text style={styles.errorText}>{lastError}</Text>}
+          {lastError && (
+            <Text style={[modalStyles.errorText, modalStyles.centeredText]}>{lastError}</Text>
+          )}
           <AnimatedPressable
             testID="unlock-purchase-button"
             accessibilityRole="button"
             disabled={isPurchasing}
             style={[
+              modalStyles.primaryButton,
               styles.primaryButton,
               { backgroundColor: colors.accent, opacity: isPurchasing ? 0.7 : 1 },
             ]}
             onPress={purchase}
           >
             {isPurchasing ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={staticColors.onColor} />
             ) : (
-              <Text style={styles.primaryLabel}>{price ? `Unlock for ${price}` : 'Unlock'}</Text>
+              <Text style={modalStyles.primaryLabel}>{price ? `Unlock for ${price}` : 'Unlock'}</Text>
             )}
           </AnimatedPressable>
           <AnimatedPressable
@@ -75,7 +79,7 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
             disabled={isPurchasing}
             onPress={restore}
           >
-            <Text style={[styles.secondaryLabel, { color: colors.accent }]}>Restore Purchase</Text>
+            <Text style={[modalStyles.subtleLabel, styles.secondaryLabel, { color: colors.accent }]}>Restore Purchase</Text>
           </AnimatedPressable>
           <AnimatedPressable
             testID="unlock-close-button"
@@ -83,7 +87,7 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Text style={[styles.closeLabel, { color: colors.textSecondary }]}>Maybe Later</Text>
+            <Text style={[modalStyles.subtleLabel, { color: colors.textSecondary }]}>Maybe Later</Text>
           </AnimatedPressable>
         </>
       ) : (
@@ -94,55 +98,18 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
 }
 
 const styles = StyleSheet.create({
-  emoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
   body: {
-    fontSize: 15,
-    fontFamily: fontFamily.regular,
-    textAlign: 'center',
     marginBottom: 20,
-  },
-  errorText: {
-    color: '#D92D20',
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
   },
   primaryButton: {
     width: '100%',
-    borderRadius: 18,
-    paddingVertical: 14,
     paddingHorizontal: 20,
-    alignItems: 'center',
     marginBottom: 16,
   },
-  primaryLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: fontFamily.bold,
-  },
   secondaryLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: fontFamily.regular,
     marginBottom: 16,
   },
   closeButton: {
     paddingVertical: 4,
-  },
-  closeLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: fontFamily.regular,
   },
 });

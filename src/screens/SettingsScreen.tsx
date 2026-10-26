@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
-import type { SettingsScreenProps } from '../navigation/types';
 import type { Difficulty, Theme } from '../types/game';
 
 const THEME_OPTIONS: { value: Theme; label: string }[] = [
@@ -23,7 +22,7 @@ const MUTE_OPTIONS: { value: 'on' | 'off'; label: string }[] = [
   { value: 'off', label: 'Off' },
 ];
 
-export function SettingsScreen(_props: Readonly<SettingsScreenProps>) {
+export function SettingsScreen() {
   const { muted, theme, difficulty, colors, setMuted, setTheme, setDifficulty } = useSettings();
 
   return (
