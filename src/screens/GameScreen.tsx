@@ -9,6 +9,7 @@ import { StreakIndicator } from '../components/StreakIndicator';
 import { NameEntryModal } from '../components/NameEntryModal';
 import { GetReadyModal } from '../components/GetReadyModal';
 import { useShake } from '../components/useShake';
+import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors } from '../theme/tokens';
@@ -31,7 +32,11 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   // new choices), so the whole grid shakes instead.
   const handleAnswer = useCallback(
     (value: number) => {
-      if (submitAnswer(value) === 'wrong') {
+      const result = submitAnswer(value);
+      if (result === 'correct') {
+        playCorrectSound();
+      } else if (result === 'wrong') {
+        playWrongSound();
         shake();
       }
     },

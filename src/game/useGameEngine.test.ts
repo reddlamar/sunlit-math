@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useGameEngine } from './useGameEngine';
+import * as sounds from '../audio/sounds';
 
 describe('useGameEngine', () => {
   beforeEach(() => {
@@ -191,5 +192,24 @@ describe('useGameEngine', () => {
     expect(result.current.submitAnswer).toBe(before.submitAnswer);
     expect(result.current.pause).toBe(before.pause);
     expect(result.current.resume).toBe(before.resume);
+  });
+
+  it('stays free of side effects: sound is the screen\'s job, not the engine\'s', async () => {
+    const correct = jest.spyOn(sounds, 'playCorrectSound');
+    const wrong = jest.spyOn(sounds, 'playWrongSound');
+    const { result } = await renderHook(() => useGameEngine('addition'));
+    await act(async () => {
+      result.current.start();
+    });
+
+    await act(async () => {
+      result.current.submitAnswer(result.current.problem!.answer);
+    });
+    await act(async () => {
+      result.current.submitAnswer(result.current.problem!.answer + 1000);
+    });
+
+    expect(correct).not.toHaveBeenCalled();
+    expect(wrong).not.toHaveBeenCalled();
   });
 });
