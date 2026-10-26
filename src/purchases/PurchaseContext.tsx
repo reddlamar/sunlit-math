@@ -26,6 +26,13 @@ type PurchaseContextValue = {
 
 const PurchaseContext = createContext<PurchaseContextValue | undefined>(undefined);
 
+// The store is the source of truth for what was bought (it is re-queried on every
+// launch), so this local copy is only a head start. Failing to write it must never
+// block the unlock or leave a paid transaction unfinished.
+function rememberUnlock(): Promise<void> {
+  return AsyncStorage.setItem(STORAGE_KEY, 'true').catch(() => {});
+}
+
 function ownsUnlock(purchases: Purchase[]): boolean {
   return purchases.some((entry) => entry.productId === UNLOCK_ALL_OPERATIONS_SKU);
 }
@@ -37,7 +44,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
 
   const markUnlocked = async () => {
     setHasStoredUnlock(true);
-    await AsyncStorage.setItem(STORAGE_KEY, 'true');
+    await rememberUnlock();
   };
 
   const {
@@ -64,11 +71,13 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
   });
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((value) => {
-      if (value === 'true') {
-        setHasStoredUnlock(true);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((value) => {
+        if (value === 'true') {
+          setHasStoredUnlock(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -90,7 +99,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (ownsPurchase) {
-      AsyncStorage.setItem(STORAGE_KEY, 'true');
+      rememberUnlock();
     }
   }, [ownsPurchase]);
 

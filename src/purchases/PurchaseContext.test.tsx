@@ -264,4 +264,34 @@ describe('PurchaseProvider', () => {
 
     expect(getByTestId('error').props.children).toBe('no-error');
   });
+
+  describe('when local storage misbehaves', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('stays locked instead of crashing when the stored entitlement cannot be read', async () => {
+      mockStore();
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+
+      const { findByText } = await renderProbe();
+
+      expect(await findByText('locked')).toBeTruthy();
+    });
+
+    it('still unlocks and finishes the transaction when the unlock cannot be saved', async () => {
+      const finishTransaction = jest.fn().mockResolvedValue(undefined);
+      const store = mockStore({ finishTransaction });
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValue(new Error('full'));
+
+      const { findByText } = await renderProbe();
+      await act(async () => {
+        await store.options().onPurchaseSuccess({ productId: UNLOCK_ALL_OPERATIONS_SKU });
+      });
+
+      expect(await findByText('unlocked')).toBeTruthy();
+      expect(finishTransaction).toHaveBeenCalledWith({
+        purchase: { productId: UNLOCK_ALL_OPERATIONS_SKU },
+        isConsumable: false,
+      });
+    });
+  });
 });
