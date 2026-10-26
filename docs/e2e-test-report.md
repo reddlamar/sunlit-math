@@ -59,6 +59,28 @@ Cases are defined in [e2e-test-plan.md](e2e-test-plan.md). Run on 2026-10-26 aga
 | G1 Store unreachable | ➖ | ❌ → ✅ | **BUG-1** |
 | G2 Corrupt storage | ➖ | ➖ | Covered by unit tests only |
 
+## Re-test after merging 1.2.2
+
+After PR #13 (1.2.2) merged into `main` and into this branch, a short pass was run on the merged
+code on both devices (iPhone 16 Pro simulator, Pixel 3a emulator), covering what the merge changed.
+
+| Check | iOS | Android |
+| --- | --- | --- |
+| Locked operations keep full color with a white lock badge | ✅ | ✅ (dark theme) |
+| Answers show in a fixed 2 × 2 grid (Hard, two-digit numbers) | ✅ | ✅ |
+| Home banner has rounded corners (dark theme) | ➖ light theme only | ✅ |
+| A score of 1 reads "1 point" on the summary | ✅ | ✅ |
+| New score records the current difficulty: row reads "+ · Hard" | ✅ | ✅ |
+| Leaderboard shows the level row (All levels, Easy, Medium, Hard) | ✅ | ✅ |
+| Hard filter shows only the new score; Easy shows none (Android) | ✅ (Hard) | ✅ (Hard, Easy) |
+| Older scores without a level still show under All levels | ✅ | ✅ |
+| Next round's name card is prefilled with the last name | ✅ ("Kai") | ✅ ("Ivy") |
+| Save button label is the larger 19 px size | ✅ | ✅ |
+
+No new bugs were found. The locked-operation parental gate was not re-opened on the merged build;
+that flow is unchanged and its unit tests pass. Rank numbers 4 and up on the iOS leaderboard use the
+system font rather than the app font; this predates both the refactor and the merge.
+
 ## Bugs
 
 ### BUG-1: Uncaught promise rejections when the store is unreachable (Android)
