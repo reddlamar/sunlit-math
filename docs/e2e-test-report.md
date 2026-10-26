@@ -170,3 +170,26 @@ These four were checked on the iPhone 16 Pro: the banner is seamless on the dark
 readable darker teal on the cream page, and leaderboard ranks 4 and up are in the app font. They were
 not re-run on Android; none of the changes is platform specific.
 
+## Pre-release check of a Release build (1.2.2 candidate)
+
+Before the production build, a **Release** configuration build of `main` (including #15) was compiled
+locally and run on the iPhone 16 Pro simulator with no Metro server: the JavaScript is embedded in the app
+(`main.jsbundle`), as in a store build. This is the check that caught a native-stack bug before 1.2.1.
+
+| Check | Result |
+| --- | --- |
+| Release build compiles; app launches and runs without a dev server | ✅ |
+| Home: full-color locked buttons with white badges, transparent banner | ✅ |
+| Round: 2 × 2 grid, darker timer color, scoring, pause | ✅ |
+| Leave confirmation: Keep playing stays on the game; Leave returns Home | ✅ |
+| Parental gate: correct number opens "Unlock All Operations" with the price ($2.99) | ✅ |
+| Maybe Later closes the unlock window | ✅ |
+| Dark theme persists after force-quit and relaunch | ✅ |
+| Time's up: name card with the last name prefilled | ✅ |
+
+Not exercised: tapping Unlock or Restore, which open Apple's payment and sign-in sheets (credentials are not
+entered in testing), and grandfathering of earlier paying customers, which needs a real App Store install.
+The simulator shows "Sign in to Apple Account" prompts at launch because it has no signed-in account; they
+are cancelled and do not occur on a real device or in the App Store build. Both are also listed in
+[ios-manual-test-checklist.md](ios-manual-test-checklist.md).
+
