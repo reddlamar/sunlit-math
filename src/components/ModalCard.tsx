@@ -1,6 +1,7 @@
 import React, { type PropsWithChildren } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, StyleSheet, View } from 'react-native';
 import { useSettings } from '../settings/SettingsContext';
+import { staticColors } from '../theme/tokens';
 
 type ModalCardProps = PropsWithChildren<{
   visible: boolean;
@@ -45,7 +46,7 @@ export function ModalCard({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: staticColors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
   },

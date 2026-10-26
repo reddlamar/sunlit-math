@@ -8,7 +8,7 @@
     "@react-navigation/bottom-tabs": "^7.19.2",
     "@react-navigation/native": "^7.3.17",
     "@react-navigation/native-stack": "^7.18.9",
-    "expo": "~57.0.30",
+    "expo": "~57.0.31",
     "expo-asset": "~57.0.20",
     "expo-audio": "~57.0.5",
     "expo-dev-client": "~57.0.20",
@@ -44,11 +44,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "testTimeout": 20000,
     "setupFiles": [
       "<rootDir>/jest.setup.js"
     ],
@@ -60,6 +62,18 @@
         "statements": 90
       },
       "./src/storage/": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/settings/": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/utils/": {
         "branches": 90,
         "functions": 90,
         "lines": 90,

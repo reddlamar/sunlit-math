@@ -1,14 +1,11 @@
 import type { ColorSchemeName } from 'react-native';
-import type { Difficulty, Theme } from '../types/game';
+import { DIFFICULTIES, THEMES, type Difficulty, type Theme } from '../types/game';
 
 export type StoredSettings = {
   muted: boolean;
   theme: Theme | null;
   difficulty: Difficulty;
 };
-
-const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
-const THEMES: Theme[] = ['light', 'dark'];
 
 export function defaultStoredSettings(): StoredSettings {
   return { muted: false, theme: null, difficulty: 'easy' };

@@ -19,10 +19,5 @@ export type HomeScreenProps = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
-export type SettingsScreenProps = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, 'Settings'>,
-  NativeStackScreenProps<RootStackParamList>
->;
-
 export type GameScreenProps = NativeStackScreenProps<RootStackParamList, 'Game'>;
 export type LeaderboardScreenProps = NativeStackScreenProps<RootStackParamList, 'Leaderboard'>;

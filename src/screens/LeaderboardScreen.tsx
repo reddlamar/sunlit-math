@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
+import { OPERATIONS, operationInfo } from '../game/operations';
 import { getTopScores } from '../storage/scoresRepository';
 import { useSettings } from '../settings/SettingsContext';
-import { fontFamily, operationColors } from '../theme/tokens';
+import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import type { LeaderboardScreenProps } from '../navigation/types';
 import type { Difficulty, Operation, ScoreEntry } from '../types/game';
 
@@ -18,13 +19,6 @@ const LEVEL_FILTERS: { difficulty?: Difficulty; label: string }[] = [
   { difficulty: 'hard', label: 'Hard' },
 ];
 
-const OPERATION_SYMBOLS: Record<Operation, string> = {
-  addition: '+',
-  subtraction: '−',
-  multiplication: '×',
-  division: '÷',
-};
-
 export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps) {
   const [operation, setOperation] = useState<Operation | undefined>(route.params?.operation);
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>(undefined);
@@ -33,10 +27,11 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
 
   const filters: { operation?: Operation; label: string; color: string }[] = [
     { operation: undefined, label: 'All', color: colors.accent },
-    { operation: 'addition', label: '+', color: operationColors.addition },
-    { operation: 'subtraction', label: '−', color: operationColors.subtraction },
-    { operation: 'multiplication', label: '×', color: operationColors.multiplication },
-    { operation: 'division', label: '÷', color: operationColors.division },
+    ...OPERATIONS.map(({ operation: op, symbol }) => ({
+      operation: op,
+      label: symbol,
+      color: operationColors[op],
+    })),
   ];
 
   useEffect(() => {
@@ -79,7 +74,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
               ]}
               onPress={() => setOperation(filterOp)}
             >
-              <Text style={[styles.filterLabel, { color: active ? '#FFFFFF' : color }]}>
+              <Text style={[styles.filterLabel, { color: active ? staticColors.onColor : color }]}>
                 {label}
               </Text>
             </AnimatedPressable>
@@ -135,7 +130,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
               <View style={styles.nameBlock}>
                 <Text style={[styles.name, { color: colors.textPrimary }]}>{item.name}</Text>
                 <Text style={[styles.detail, { color: colors.textSecondary }]}>
-                  {OPERATION_SYMBOLS[item.operation]}
+                  {operationInfo(item.operation).symbol}
                   {item.difficulty ? ` · ${LEVEL_LABELS[item.difficulty]}` : ''}
                 </Text>
               </View>

@@ -26,6 +26,16 @@ function Probe() {
       <Text testID="set-hard" onPress={() => setDifficulty('hard')}>
         set-hard
       </Text>
+      <Text
+        testID="change-all"
+        onPress={() => {
+          setMuted(true);
+          setTheme('dark');
+          setDifficulty('hard');
+        }}
+      >
+        change-all
+      </Text>
     </>
   );
 }
@@ -171,5 +181,75 @@ describe('SettingsProvider', () => {
       'useSettings must be used within a SettingsProvider'
     );
     ConsoleErrorSpy.mockRestore();
+  });
+
+  it('keeps every change when several settings are changed in the same tick', async () => {
+    const { findByTestId, getByTestId } = await render(
+      <SettingsProvider>
+        <Probe />
+      </SettingsProvider>
+    );
+    await findByTestId('theme');
+
+    fireEvent.press(getByTestId('change-all'));
+
+    await waitFor(async () => {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      expect(JSON.parse(raw!)).toEqual({ muted: true, theme: 'dark', difficulty: 'hard' });
+    });
+  });
+
+  it('falls back to defaults when stored settings cannot be read', async () => {
+    jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+
+    const { findByTestId } = await render(
+      <SettingsProvider>
+        <Probe />
+      </SettingsProvider>
+    );
+
+    expect((await findByTestId('difficulty')).props.children).toBe('easy');
+    expect((await findByTestId('muted')).props.children).toBe('unmuted');
+  });
+
+  it('still applies a change in this session when saving it fails', async () => {
+    jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('full'));
+
+    const { findByTestId, getByTestId } = await render(
+      <SettingsProvider>
+        <Probe />
+      </SettingsProvider>
+    );
+    await findByTestId('difficulty');
+
+    fireEvent.press(getByTestId('set-hard'));
+
+    await waitFor(() => expect(getByTestId('difficulty').props.children).toBe('hard'));
+  });
+
+  it('hands out the same context value and setters until a setting actually changes', async () => {
+    const seen: ReturnType<typeof useSettings>[] = [];
+    function Capture() {
+      seen.push(useSettings());
+      return null;
+    }
+    const { rerender } = await render(
+      <SettingsProvider>
+        <Capture />
+      </SettingsProvider>
+    );
+    await act(async () => {});
+    await rerender(
+      <SettingsProvider>
+        <Capture />
+      </SettingsProvider>
+    );
+
+    const last = seen[seen.length - 1];
+    const previous = seen[seen.length - 2];
+    expect(last.setMuted).toBe(previous.setMuted);
+    expect(last.setTheme).toBe(previous.setTheme);
+    expect(last.setDifficulty).toBe(previous.setDifficulty);
+    expect(last).toBe(previous);
   });
 });

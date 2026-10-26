@@ -26,6 +26,20 @@ type PurchaseContextValue = {
 
 const PurchaseContext = createContext<PurchaseContextValue | undefined>(undefined);
 
+// The store is the source of truth for what was bought (it is re-queried on every
+// launch), so this local copy is only a head start. Failing to write it must never
+// block the unlock or leave a paid transaction unfinished.
+function rememberUnlock(): Promise<void> {
+  return AsyncStorage.setItem(STORAGE_KEY, 'true').catch(() => {});
+}
+
+function ignoreFailure(request: Promise<unknown> | void): Promise<void> {
+  return Promise.resolve(request).then(
+    () => undefined,
+    () => undefined
+  );
+}
+
 function ownsUnlock(purchases: Purchase[]): boolean {
   return purchases.some((entry) => entry.productId === UNLOCK_ALL_OPERATIONS_SKU);
 }
@@ -37,7 +51,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
 
   const markUnlocked = async () => {
     setHasStoredUnlock(true);
-    await AsyncStorage.setItem(STORAGE_KEY, 'true');
+    await rememberUnlock();
   };
 
   const {
@@ -64,19 +78,24 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
   });
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((value) => {
-      if (value === 'true') {
-        setHasStoredUnlock(true);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((value) => {
+        if (value === 'true') {
+          setHasStoredUnlock(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!connected) {
       return;
     }
-    fetchProducts({ skus: [UNLOCK_ALL_OPERATIONS_SKU], type: 'in-app' });
-    getAvailablePurchases();
+    // These only fill in the price and what is already owned. The store can be
+    // unreachable (no Play Store, offline), and that must leave the app usable and
+    // locked rather than surface as an uncaught promise rejection.
+    ignoreFailure(fetchProducts({ skus: [UNLOCK_ALL_OPERATIONS_SKU], type: 'in-app' }));
+    ignoreFailure(getAvailablePurchases());
     hasPaidDownload().then((paid) => {
       if (paid) {
         markUnlocked();
@@ -90,7 +109,7 @@ export function PurchaseProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (ownsPurchase) {
-      AsyncStorage.setItem(STORAGE_KEY, 'true');
+      rememberUnlock();
     }
   }, [ownsPurchase]);
 

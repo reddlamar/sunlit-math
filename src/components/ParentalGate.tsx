@@ -4,6 +4,7 @@ import { AnimatedPressable } from './AnimatedPressable';
 import { useSettings } from '../settings/SettingsContext';
 import { createGateChallenge, isGateAnswerCorrect } from '../purchases/parentalGate';
 import { fontFamily } from '../theme/tokens';
+import { modalStyles } from './modalStyles';
 
 const WRONG_ANSWER_MESSAGE = "That's not right. Try this one instead.";
 
@@ -34,9 +35,9 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
 
   return (
     <>
-      <Text style={styles.emoji}>🔒</Text>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>Ask a grown-up</Text>
-      <Text style={[styles.body, { color: colors.textSecondary }]}>
+      <Text style={modalStyles.emoji}>🔒</Text>
+      <Text style={[modalStyles.title, { color: colors.textPrimary }]}>Ask a grown-up</Text>
+      <Text style={[modalStyles.body, styles.body, { color: colors.textSecondary }]}>
         Grown-ups: type this number using digits to continue.
       </Text>
       <Text testID="parental-gate-words" style={[styles.words, { color: colors.textPrimary }]}>
@@ -46,9 +47,10 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
         testID="parental-gate-input"
         accessibilityLabel="Number in digits"
         style={[
+          modalStyles.input,
           styles.input,
           { borderColor: colors.border, color: colors.textPrimary },
-          error && styles.inputError,
+          error && [modalStyles.inputError, { borderColor: colors.danger }],
         ]}
         value={answer}
         onChangeText={setAnswer}
@@ -57,14 +59,18 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
         maxLength={3}
         autoCorrect={false}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && (
+        <Text style={[modalStyles.errorText, modalStyles.centeredText, { color: colors.danger }]}>
+          {error}
+        </Text>
+      )}
       <AnimatedPressable
         testID="parental-gate-submit"
         accessibilityRole="button"
-        style={[styles.primaryButton, { backgroundColor: colors.accent }]}
+        style={[modalStyles.primaryButton, styles.primaryButton, { backgroundColor: colors.accent }]}
         onPress={handleSubmit}
       >
-        <Text style={styles.primaryLabel}>Continue</Text>
+        <Text style={modalStyles.primaryLabel}>Continue</Text>
       </AnimatedPressable>
       <AnimatedPressable
         testID="parental-gate-cancel"
@@ -72,28 +78,14 @@ export function ParentalGate({ onPass, onCancel }: ParentalGateProps) {
         style={styles.cancelButton}
         onPress={onCancel}
       >
-        <Text style={[styles.cancelLabel, { color: colors.textSecondary }]}>Cancel</Text>
+        <Text style={[modalStyles.subtleLabel, { color: colors.textSecondary }]}>Cancel</Text>
       </AnimatedPressable>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  emoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
   body: {
-    fontSize: 15,
-    fontFamily: fontFamily.regular,
-    textAlign: 'center',
     marginBottom: 12,
   },
   words: {
@@ -105,44 +97,15 @@ const styles = StyleSheet.create({
   },
   input: {
     alignSelf: 'stretch',
-    borderWidth: 2,
-    borderRadius: 16,
-    padding: 12,
     fontSize: 18,
-    fontFamily: fontFamily.regular,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  inputError: {
-    borderColor: '#D92D20',
-    marginBottom: 6,
-  },
-  errorText: {
-    color: '#D92D20',
-    fontSize: 13,
-    marginBottom: 12,
     textAlign: 'center',
   },
   primaryButton: {
     width: '100%',
-    borderRadius: 18,
-    paddingVertical: 14,
     paddingHorizontal: 20,
-    alignItems: 'center',
     marginBottom: 16,
-  },
-  primaryLabel: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: fontFamily.bold,
   },
   cancelButton: {
     paddingVertical: 4,
-  },
-  cancelLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: fontFamily.regular,
   },
 });

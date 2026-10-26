@@ -130,6 +130,25 @@ describe('NameEntryModal', () => {
     });
   });
 
+  it('tells the player when the score could not be saved and lets them try again', async () => {
+    jest.mocked(scoresRepository.addScore).mockRejectedValueOnce(new Error('full'));
+    const onSaved = jest.fn();
+    const { getByPlaceholderText, getByText, queryByText } = await renderNameEntryModal(
+      <NameEntryModal visible score={7} operation="addition" onSaved={onSaved} />
+    );
+    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
+
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => expect(getByText(/couldn't be saved/)).toBeTruthy());
+    expect(onSaved).not.toHaveBeenCalled();
+
+    await fireEvent.press(getByText('Save'));
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(queryByText(/couldn't be saved/)).toBeNull();
+  });
+
   it("prefills the field with the last player's name", async () => {
     jest.mocked(scoresRepository.getLastPlayerName).mockResolvedValue('Ada');
 

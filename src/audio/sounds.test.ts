@@ -6,8 +6,11 @@ function loadSoundsModule() {
   // factory from jest.setup.js, so createAudioPlayer/preload must be
   // re-obtained here too — references captured before reset would point at
   // stale mocks.
+  // require() is deliberate: only it can re-evaluate the module after resetModules().
+  /* eslint-disable @typescript-eslint/no-require-imports */
   const audioMock = require('expo-audio');
   const sounds: SoundsModule = require('./sounds');
+  /* eslint-enable @typescript-eslint/no-require-imports */
   return {
     sounds,
     mockCreateAudioPlayer: audioMock.createAudioPlayer as jest.Mock,

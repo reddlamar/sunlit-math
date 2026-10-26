@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { OperationButton } from '../components/OperationButton';
 import { UnlockModal } from '../components/UnlockModal';
+import { OPERATIONS } from '../game/operations';
 import { getTopScores } from '../storage/scoresRepository';
 import { isOperationLocked } from '../purchases/entitlements';
 import { usePurchase } from '../purchases/PurchaseContext';
@@ -13,13 +14,6 @@ import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
-
-const OPERATIONS: { operation: Operation; symbol: string; label: string }[] = [
-  { operation: 'addition', symbol: '+', label: 'Addition' },
-  { operation: 'subtraction', symbol: '−', label: 'Subtraction' },
-  { operation: 'multiplication', symbol: '×', label: 'Multiplication' },
-  { operation: 'division', symbol: '÷', label: 'Division' },
-];
 
 export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const [topScore, setTopScore] = useState<ScoreEntry | null>(null);
@@ -55,6 +49,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Image
+          testID="home-banner"
           source={require('../../assets/home-header-banner.png')}
           style={styles.headerBanner}
           resizeMode="contain"
@@ -123,10 +118,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
   },
+  // The artwork has an opaque cream background (the light theme's page color), so on
+  // the dark theme it shows as a strip; rounded corners make that look intentional.
   headerBanner: {
     flex: 1,
     aspectRatio: 7,
     marginRight: 16,
+    borderRadius: 12,
   },
   leaderboardIcon: {
     fontSize: 28,

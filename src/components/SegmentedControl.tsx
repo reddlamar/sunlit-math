@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
-import { fontFamily, light } from '../theme/tokens';
+import { fontFamily, light, staticColors } from '../theme/tokens';
 
 type SegmentedControlOption<T extends string> = {
   value: T;
@@ -43,7 +43,7 @@ export function SegmentedControl<T extends string>({
             ]}
             onPress={() => onChange(option.value)}
           >
-            <Text style={[styles.label, { color: selected ? '#FFFFFF' : color }]}>
+            <Text style={[styles.label, { color: selected ? staticColors.onColor : color }]}>
               {option.label}
             </Text>
           </AnimatedPressable>

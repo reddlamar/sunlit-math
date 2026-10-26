@@ -2,11 +2,12 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { onCorrectAnswer, onWrongAnswer } from './scoring';
 import { generatorForOperation } from './problemGenerators';
 import { useGameTimer } from './useGameTimer';
-import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import type { Difficulty, GameState, GameStatus, Operation, Problem } from '../types/game';
 
 const GAME_DURATION_MS = 60000;
 
+// The engine is pure game logic: it reports each answer's result and leaves feedback
+// (sound, shake) to the screen, so this layer depends on neither audio nor the UI.
 export type AnswerResult = 'correct' | 'wrong' | 'ignored';
 
 export type UseGameEngineResult = {
@@ -75,11 +76,6 @@ export function useGameEngine(
       const isCorrect = value === current.answer;
       setGameState((prev) => (isCorrect ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
       updateProblem(generator(difficulty));
-      if (isCorrect) {
-        playCorrectSound();
-      } else {
-        playWrongSound();
-      }
       return isCorrect ? 'correct' : 'wrong';
     },
     [generator, difficulty, updateProblem]

@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { GameScreen } from './GameScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
+import * as sounds from '../audio/sounds';
 import type { GameScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
@@ -111,6 +112,31 @@ describe('GameScreen', () => {
     await fireEvent.press(correctChoice);
 
     expect(getByTestId('score-value').props.children).toBe(1);
+  });
+
+  it('plays the correct sound for a right answer and the wrong sound (with a shake) for a wrong one', async () => {
+    const correctSound = jest.spyOn(sounds, 'playCorrectSound');
+    const wrongSound = jest.spyOn(sounds, 'playWrongSound');
+    const { getByTestId, findAllByTestId } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+
+    const [a, b] = (getByTestId('problem-question').props.children as string)
+      .split('+')
+      .map((n) => Number(n.trim()));
+    const choices = await findAllByTestId('answer-choice');
+    await fireEvent.press(choices.find((choice) => choice.props.children === a + b)!);
+
+    expect(correctSound).toHaveBeenCalledTimes(1);
+    expect(wrongSound).not.toHaveBeenCalled();
+
+    const [c, d] = (getByTestId('problem-question').props.children as string)
+      .split('+')
+      .map((n) => Number(n.trim()));
+    const next = await findAllByTestId('answer-choice');
+    await fireEvent.press(next.find((choice) => choice.props.children !== c + d)!);
+
+    expect(wrongSound).toHaveBeenCalledTimes(1);
+    expect(mockShake).toHaveBeenCalledTimes(1);
   });
 
   it('pauses the game, hiding the choices, and resumes on tap', async () => {

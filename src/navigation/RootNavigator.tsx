@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,6 +9,12 @@ import { GameScreen } from '../screens/GameScreen';
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { useSettings } from '../settings/SettingsContext';
 import type { MainTabParamList, RootStackParamList } from './types';
+
+const styles = StyleSheet.create({
+  tabIcon: {
+    fontSize: 20,
+  },
+});
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -28,19 +34,19 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ color }) => <TabIcon icon="🏠" color={color} /> }}
+        options={{ tabBarIcon: () => <TabIcon icon="🏠" /> }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarIcon: ({ color }) => <TabIcon icon="⚙️" color={color} /> }}
+        options={{ tabBarIcon: () => <TabIcon icon="⚙️" /> }}
       />
     </Tab.Navigator>
   );
 }
 
-function TabIcon({ icon }: { icon: string; color: string }) {
-  return <Text style={{ fontSize: 20 }}>{icon}</Text>;
+function TabIcon({ icon }: { icon: string }) {
+  return <Text style={styles.tabIcon}>{icon}</Text>;
 }
 
 export function RootNavigator() {

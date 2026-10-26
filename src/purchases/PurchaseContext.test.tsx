@@ -264,4 +264,55 @@ describe('PurchaseProvider', () => {
 
     expect(getByTestId('error').props.children).toBe('no-error');
   });
+
+  describe('when local storage misbehaves', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('stays locked instead of crashing when the stored entitlement cannot be read', async () => {
+      mockStore();
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+
+      const { findByText } = await renderProbe();
+
+      expect(await findByText('locked')).toBeTruthy();
+    });
+
+    it('still unlocks and finishes the transaction when the unlock cannot be saved', async () => {
+      const finishTransaction = jest.fn().mockResolvedValue(undefined);
+      const store = mockStore({ finishTransaction });
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValue(new Error('full'));
+
+      const { findByText } = await renderProbe();
+      await act(async () => {
+        await store.options().onPurchaseSuccess({ productId: UNLOCK_ALL_OPERATIONS_SKU });
+      });
+
+      expect(await findByText('unlocked')).toBeTruthy();
+      expect(finishTransaction).toHaveBeenCalledWith({
+        purchase: { productId: UNLOCK_ALL_OPERATIONS_SKU },
+        isConsumable: false,
+      });
+    });
+  });
+
+  describe('when the store is unavailable', () => {
+    it('keeps running without unhandled rejections when the store calls fail', async () => {
+      const unhandled: unknown[] = [];
+      const record = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', record);
+      mockStore({
+        fetchProducts: jest.fn().mockRejectedValue(new Error('Failed to query product')),
+        getAvailablePurchases: jest.fn().mockRejectedValue(new Error('Play Store service is not connected')),
+      });
+
+      const { findByText } = await renderProbe();
+      expect(await findByText('locked')).toBeTruthy();
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+
+      process.off('unhandledRejection', record);
+      expect(unhandled).toEqual([]);
+    });
+  });
 });

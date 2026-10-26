@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
-import { fontFamily } from '../theme/tokens';
+import { fontFamily, staticColors, choiceColors } from '../theme/tokens';
 
 type AnswerButtonProps = {
   value: number;
@@ -15,7 +15,7 @@ export const AnswerButton = memo(function AnswerButton({
   value,
   onPress,
   disabled,
-  color = '#5B4FCF',
+  color = choiceColors[0],
 }: AnswerButtonProps) {
   return (
     <AnimatedPressable
@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    color: '#FFFFFF',
+    color: staticColors.onColor,
   },
 });

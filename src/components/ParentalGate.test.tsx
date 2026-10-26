@@ -2,6 +2,8 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ParentalGate } from './ParentalGate';
 import { SettingsProvider } from '../settings/SettingsContext';
+import { light } from '../theme/tokens';
+import { hasStyleValue } from '../testUtils/styleAssertions';
 
 function renderGate(onPass = jest.fn(), onCancel = jest.fn()) {
   return render(
@@ -64,5 +66,17 @@ describe('ParentalGate', () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onPass).not.toHaveBeenCalled();
+  });
+
+  it("draws the wrong-answer message in the theme's danger color", async () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    const { getByTestId, getByText } = await renderGate();
+
+    await fireEvent.changeText(getByTestId('parental-gate-input'), '999');
+    await fireEvent.press(getByTestId('parental-gate-submit'));
+
+    expect(
+      hasStyleValue(getByText("That's not right. Try this one instead.").props.style, 'color', light.danger)
+    ).toBe(true);
   });
 });
