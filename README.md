@@ -19,7 +19,7 @@ Available for iOS and Android.
 
 ## Getting started
 
-Requires Node 22+ and, for native builds, Xcode (iOS) or Android Studio (Android).
+Requires Node 20.19.4 or newer (CI and `.nvmrc` use Node 22; run `nvm use` to match) and, for native builds, Xcode (iOS) or Android Studio (Android).
 
 ```bash
 npm install

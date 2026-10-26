@@ -103,4 +103,22 @@ describe('theme tokens', () => {
   ])('keeps error text readable (WCAG AA, 4.5:1) on the %s modal surface', (_name, tokens) => {
     expect(contrastRatio(tokens.danger, tokens.surface)).toBeGreaterThanOrEqual(4.5);
   });
+
+  // The timer and streak numbers are 18-22px bold, which counts as large text (3:1), and
+  // the timer fill must stand out from its track.
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('keeps the %s timer number and fill distinct from what they sit on (3:1)', (_name, tokens) => {
+    expect(contrastRatio(tokens.timer, tokens.background)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(tokens.timer, tokens.border)).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('keeps the %s streak number readable on the page and on its lit badge (3:1)', (_name, tokens) => {
+    expect(contrastRatio(tokens.streak, tokens.background)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(tokens.streak, tokens.streakSoft)).toBeGreaterThanOrEqual(3);
+  });
 });

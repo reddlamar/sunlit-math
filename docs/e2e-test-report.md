@@ -78,8 +78,9 @@ code on both devices (iPhone 16 Pro simulator, Pixel 3a emulator), covering what
 | Save button label is the larger 19 px size | ✅ | ✅ |
 
 No new bugs were found. The locked-operation parental gate was not re-opened on the merged build;
-that flow is unchanged and its unit tests pass. Rank numbers 4 and up on the iOS leaderboard use the
-system font rather than the app font; this predates both the refactor and the merge.
+that flow is unchanged and its unit tests pass. One cosmetic issue was noticed: rank numbers 4 and
+up on the iOS leaderboard used the system font rather than the app font. It predated both the
+refactor and the merge, and has since been fixed.
 
 ## Bugs
 
@@ -127,11 +128,12 @@ system font rather than the app font; this predates both the refactor and the me
 
 ## Observations (not changed)
 
-- **Dark-mode banner (fixed, BUG-4).** The Home banner image has an opaque cream background
-  (exactly the light theme's page color), so on the dark theme it showed as a plain light
-  rectangle. `headerBanner` now has `borderRadius: 12` so it reads as a deliberate strip, with a
-  test on the `home-banner` image. This was checked by unit test only, not re-run on a device.
-  The cleaner long-term fix is a transparent banner asset from the designer.
+- **Dark-mode banner (fixed, BUG-4, then properly fixed).** The Home banner image had an opaque
+  cream background (the light theme's page color), so on the dark theme it showed as a plain
+  light rectangle. It was first given rounded corners as a workaround; the banner asset now has
+  a transparent background (only the background connected to the image edge was removed, with
+  edge pixels un-blended so there is no cream halo), and the workaround was removed. A test reads
+  the PNG's top corners to keep it transparent.
 - **Answer grid and locked buttons (since fixed by the 1.2.2 merge).** At the time of testing,
   `main` wrapped the four answers 3 + 1 and dimmed locked buttons to 55% opacity. PR #13 (2 × 2
   grid, full-color locked buttons with a white lock badge) has since merged into `main` and into
@@ -152,3 +154,19 @@ system font rather than the app font; this predates both the refactor and the me
   tracked in git.
 - Gameplay was driven by temporary logging of each question (removed before committing), which
   let a script pick answers; UI dumps on Android were too slow while the timer animated.
+
+## Follow-ups completed after the re-test
+
+- **Transparent banner**: see above.
+- **Timer and streak contrast**: on the cream page the timer number was 2.07:1 and the streak number
+  1.78:1. The light-theme colors are now `#19899A` and `#D66800` (3.6:1 and 3.13:1 on the page, 3.17:1
+  for the timer fill against its track, 3.25:1 for the streak on its lit badge); the dark theme already
+  passed. `tokens.test.ts` enforces 3:1 in both themes.
+- **Leaderboard ranks** 4 and up use the app font.
+- **Toolchain**: `@types/node` is a declared dev dependency; `.nvmrc` (Node 22) is the single source of
+  truth for CI; `engines` requires Node 20.19.4 or newer, which Expo needs.
+
+These four were checked on the iPhone 16 Pro: the banner is seamless on the dark theme, the timer is a
+readable darker teal on the cream page, and leaderboard ranks 4 and up are in the app font. They were
+not re-run on Android; none of the changes is platform specific.
+

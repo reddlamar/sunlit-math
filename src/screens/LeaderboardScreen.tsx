@@ -222,9 +222,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 10,
   },
+  // Medals are emoji; ranks 4 and up are digits, which need the app font to match the row.
   rank: {
     width: 36,
     fontSize: 20,
+    fontFamily: fontFamily.bold,
   },
   nameBlock: {
     flex: 1,

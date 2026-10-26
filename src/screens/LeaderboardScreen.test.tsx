@@ -3,6 +3,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { LeaderboardScreen } from './LeaderboardScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
+import { fontFamily } from '../theme/tokens';
+import { hasStyleValue } from '../testUtils/styleAssertions';
 import type { LeaderboardScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
@@ -116,5 +118,22 @@ describe('LeaderboardScreen', () => {
     // The older score shows just its operation: the '÷' in the filter row plus its own row.
     expect(getAllByText('÷')).toHaveLength(2);
     expect(queryByText(/÷ ·/)).toBeNull();
+  });
+
+  it('writes rank numbers in the app font, like everything else on the row', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(
+      ['a', 'b', 'c', 'd'].map((id, i) => ({
+        id,
+        name: id.toUpperCase(),
+        score: 10 - i,
+        operation: 'addition' as const,
+        createdAt: i,
+      }))
+    );
+
+    const { findByText } = await renderLeaderboard(makeNavigation(), makeRoute());
+
+    const rank = await findByText('4.');
+    expect(hasStyleValue(rank.props.style, 'fontFamily', fontFamily.bold)).toBe(true);
   });
 });
