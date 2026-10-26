@@ -53,4 +53,58 @@ describe('scoresRepository', () => {
     expect(scores.every((s) => s.operation === 'addition')).toBe(true);
     expect(scores[0].score).toBe(15);
   });
+
+  describe('resilience', () => {
+    const KEY = 'math60_scores_v1';
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it('treats unparseable stored data as no scores instead of throwing', async () => {
+      await AsyncStorage.setItem(KEY, '{not json');
+      expect(await getAllScores()).toEqual([]);
+    });
+
+    it('treats a non-array payload as no scores', async () => {
+      await AsyncStorage.setItem(KEY, JSON.stringify({ oops: true }));
+      expect(await getAllScores()).toEqual([]);
+    });
+
+    it('drops malformed entries but keeps the valid ones', async () => {
+      const good = makeEntry({ id: 'good', score: 4 });
+      await AsyncStorage.setItem(
+        KEY,
+        JSON.stringify([good, null, { id: 1 }, { ...good, id: 'x', score: 'NaN' }, { ...good, operation: 'power' }])
+      );
+      expect(await getAllScores()).toEqual([good]);
+    });
+
+    it('returns no scores when storage itself fails to read', async () => {
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+      expect(await getAllScores()).toEqual([]);
+    });
+
+    it('does not lose scores saved at the same time', async () => {
+      await Promise.all(
+        Array.from({ length: 5 }, (_, i) => addScore(makeEntry({ id: `c${i}`, score: i })))
+      );
+      expect(await getAllScores()).toHaveLength(5);
+    });
+
+    it('does not overwrite saved scores when they cannot be read while saving', async () => {
+      const existing = makeEntry({ id: 'old', score: 9 });
+      await addScore(existing);
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+
+      await expect(addScore(makeEntry({ id: 'new' }))).rejects.toThrow('disk');
+      expect(await getAllScores()).toEqual([existing]);
+    });
+
+    it('rejects when a write fails, then keeps accepting later scores', async () => {
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('full'));
+      await expect(addScore(makeEntry({ id: 'lost' }))).rejects.toThrow('full');
+
+      await addScore(makeEntry({ id: 'kept' }));
+      expect((await getAllScores()).map((entry) => entry.id)).toEqual(['kept']);
+    });
+  });
 });

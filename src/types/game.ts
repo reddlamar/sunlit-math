@@ -1,6 +1,7 @@
 export type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
 
 export type GameState = {
   score: number;
@@ -26,7 +27,8 @@ export type ScoreEntry = {
 
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'ended';
 
-export type Theme = 'light' | 'dark';
+export const THEMES = ['light', 'dark'] as const;
+export type Theme = (typeof THEMES)[number];
 
 export type Settings = {
   muted: boolean;

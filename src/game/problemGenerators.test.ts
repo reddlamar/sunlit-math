@@ -1,13 +1,12 @@
 import {
+  buildChoices,
   generateAddition,
   generateSubtraction,
   generateMultiplication,
   generateDivision,
   generatorForOperation,
 } from './problemGenerators';
-import type { Difficulty, Problem } from '../types/game';
-
-const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
+import { DIFFICULTIES, type Problem } from '../types/game';
 
 function expectValidProblemShape(problem: Problem) {
   expect(typeof problem.id).toBe('string');
@@ -15,9 +14,34 @@ function expectValidProblemShape(problem: Problem) {
   expect(typeof problem.question).toBe('string');
   expect(problem.choices).toContain(problem.answer);
   expect(new Set(problem.choices).size).toBe(problem.choices.length);
-  expect(problem.choices.length).toBeGreaterThanOrEqual(3);
-  expect(problem.choices.length).toBeLessThanOrEqual(4);
+  expect(problem.choices).toHaveLength(4);
+  problem.choices.forEach((choice) => expect(choice).toBeGreaterThanOrEqual(0));
 }
+
+describe('buildChoices', () => {
+  it('always yields the answer plus three distinct, non-negative distractors', () => {
+    for (const answer of [0, 1, 2, 7, 100]) {
+      for (let i = 0; i < 100; i++) {
+        const choices = buildChoices(answer, 3);
+        expect(choices).toHaveLength(4);
+        expect(choices).toContain(answer);
+        expect(new Set(choices).size).toBe(4);
+        choices.forEach((choice) => expect(choice).toBeGreaterThanOrEqual(0));
+      }
+    }
+  });
+
+  it('keeps distractors within the spread of the answer', () => {
+    for (let i = 0; i < 100; i++) {
+      buildChoices(20, 5).forEach((choice) => expect(Math.abs(choice - 20)).toBeLessThanOrEqual(5));
+    }
+  });
+
+  it('terminates even when the only valid distractors are the minimum possible', () => {
+    // answer 0 with spread 3 leaves exactly {1, 2, 3} as candidates.
+    expect([...buildChoices(0, 3)].sort()).toEqual([0, 1, 2, 3]);
+  });
+});
 
 describe('generateAddition', () => {
   it.each(DIFFICULTIES)('produces a valid, correct problem for %s difficulty', (difficulty) => {
