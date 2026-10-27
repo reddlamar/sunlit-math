@@ -4,6 +4,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { GameScreen } from './GameScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { REVEAL_MS } from '../components/useAnswerFeedback';
+import { timerFillPercent } from '../testUtils/timer';
 import type { GameScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
@@ -141,6 +142,31 @@ describe('GameScreen answer feedback', () => {
       // The board is live again.
       await tapRight(screen);
       expect(screen.getByTestId('score-value')).toHaveTextContent('Score 0');
+    });
+
+    it('stops the round clock while the right answer is shown, then runs it again', async () => {
+      const screen = await renderStartedRound();
+      const fill = () => timerFillPercent(screen.getByTestId('timer-bar-fill', HIDDEN));
+      await act(async () => {
+        jest.advanceTimersByTime(5000);
+      });
+      const beforeMiss = fill();
+      expect(beforeMiss).toBeLessThan(100);
+
+      await tapWrong(screen);
+      const atMiss = fill();
+      await act(async () => {
+        jest.advanceTimersByTime(REVEAL_MS - 100);
+      });
+      expect(fill()).toBe(atMiss);
+
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(3000);
+      });
+      expect(fill()).toBeLessThan(atMiss);
     });
 
     it('tells a screen reader which answer was right', async () => {

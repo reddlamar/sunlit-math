@@ -36,7 +36,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const layout = useLayout();
   const arrangement = gameArrangement(layout);
 
-  const { submitAnswer, pause } = engine;
+  const { submitAnswer, pause, holdClock, releaseClock } = engine;
   const isRoundInProgress = engine.status === 'playing' || engine.status === 'paused';
 
   // The pressed button is usually gone after a wrong answer (the next problem has
@@ -53,6 +53,17 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
     },
     [submitAnswer, shake]
   );
+
+  // Showing the right answer after a miss is teaching, not play, so it must not cost the
+  // player time on the clock.
+  const isRevealing = reveal !== null;
+  useEffect(() => {
+    if (!isRevealing) {
+      return;
+    }
+    holdClock();
+    return releaseClock;
+  }, [isRevealing, holdClock, releaseClock]);
 
   // The timer runs on wall-clock time, so a phone call or app switch would otherwise
   // quietly burn the round. Pausing on background gives the player the round back.

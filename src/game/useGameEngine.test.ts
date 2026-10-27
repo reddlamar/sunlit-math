@@ -277,6 +277,158 @@ describe('useGameEngine', () => {
     });
   });
 
+  describe('holding the clock', () => {
+    const startRound = async () => {
+      const hook = await renderHook(() => useGameEngine('addition'));
+      await act(async () => {
+        hook.result.current.start();
+      });
+      return hook.result;
+    };
+    const wait = (ms: number) =>
+      act(async () => {
+        jest.advanceTimersByTime(ms);
+      });
+
+    it('stops the clock without pausing the round', async () => {
+      const result = await startRound();
+      await wait(1000);
+
+      await act(async () => {
+        result.current.holdClock();
+      });
+      const heldAt = result.current.timeLeft;
+      await wait(5000);
+
+      expect(result.current.timeLeft).toBe(heldAt);
+      expect(result.current.status).toBe('playing');
+    });
+
+    it('lets the clock run on again from where it stopped, losing no time', async () => {
+      const result = await startRound();
+      await wait(1000);
+      await act(async () => {
+        result.current.holdClock();
+      });
+      const heldAt = result.current.timeLeft;
+      await wait(5000);
+
+      await act(async () => {
+        result.current.releaseClock();
+      });
+      await wait(1000);
+
+      expect(result.current.timeLeft).toBeLessThan(heldAt);
+      expect(result.current.timeLeft).toBeGreaterThanOrEqual(heldAt - 1100);
+    });
+
+    it('does not let the round expire while held', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.holdClock();
+      });
+
+      await wait(120000);
+
+      expect(result.current.status).toBe('playing');
+    });
+
+    it('keeps the clock stopped when the player resumes from a pause during a hold', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.holdClock();
+        result.current.pause();
+      });
+      await act(async () => {
+        result.current.resume();
+      });
+      const heldAt = result.current.timeLeft;
+      await wait(3000);
+
+      expect(result.current.status).toBe('playing');
+      expect(result.current.timeLeft).toBe(heldAt);
+    });
+
+    it('restarts the clock on release if the round was resumed in the meantime', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.holdClock();
+        result.current.pause();
+        result.current.resume();
+      });
+
+      await act(async () => {
+        result.current.releaseClock();
+      });
+      const releasedAt = result.current.timeLeft;
+      await wait(1000);
+
+      expect(result.current.timeLeft).toBeLessThan(releasedAt);
+    });
+
+    it('leaves a paused round paused when released, for its own resume to restart', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.holdClock();
+        result.current.pause();
+      });
+
+      await act(async () => {
+        result.current.releaseClock();
+      });
+      const pausedAt = result.current.timeLeft;
+      await wait(3000);
+
+      expect(result.current.status).toBe('paused');
+      expect(result.current.timeLeft).toBe(pausedAt);
+
+      await act(async () => {
+        result.current.resume();
+      });
+      await wait(1000);
+      expect(result.current.timeLeft).toBeLessThan(pausedAt);
+    });
+
+    it('does nothing on release when the clock was not held', async () => {
+      const result = await startRound();
+      await wait(1000);
+      const before = result.current.timeLeft;
+
+      await act(async () => {
+        result.current.releaseClock();
+      });
+      await wait(1000);
+
+      // The clock kept running as normal; a stray release neither restarted nor stopped it.
+      expect(result.current.timeLeft).toBeLessThan(before);
+    });
+
+    it('forgets a hold when a new round starts', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.holdClock();
+      });
+
+      await act(async () => {
+        result.current.start();
+      });
+      await wait(1000);
+
+      expect(result.current.timeLeft).toBeLessThan(60000);
+    });
+
+    it('can hold before a round has started without breaking it', async () => {
+      const hook = await renderHook(() => useGameEngine('addition'));
+      await act(async () => {
+        hook.result.current.holdClock();
+        hook.result.current.releaseClock();
+      });
+
+      expect(hook.result.current.status).toBe('idle');
+      expect(hook.result.current.timeLeft).toBe(60000);
+    });
+  });
+
   it('keeps start, submitAnswer, pause and resume stable across timer ticks', async () => {
     const { result } = await renderHook(() => useGameEngine('addition'));
     await act(async () => {
@@ -287,6 +439,8 @@ describe('useGameEngine', () => {
       submitAnswer: result.current.submitAnswer,
       pause: result.current.pause,
       resume: result.current.resume,
+      holdClock: result.current.holdClock,
+      releaseClock: result.current.releaseClock,
     };
 
     await act(async () => {
@@ -298,6 +452,8 @@ describe('useGameEngine', () => {
     expect(result.current.submitAnswer).toBe(before.submitAnswer);
     expect(result.current.pause).toBe(before.pause);
     expect(result.current.resume).toBe(before.resume);
+    expect(result.current.holdClock).toBe(before.holdClock);
+    expect(result.current.releaseClock).toBe(before.releaseClock);
   });
 
   it('stays free of side effects: sound is the screen\'s job, not the engine\'s', async () => {

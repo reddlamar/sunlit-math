@@ -30,6 +30,12 @@ export type UseGameEngineResult = {
   submitAnswer: (value: number) => AnswerResult;
   pause: () => void;
   resume: () => void;
+  /**
+   * Stops the clock without pausing the round, so the screen can show something (a missed
+   * sum's right answer) without costing the player time. Undone only by `releaseClock`.
+   */
+  holdClock: () => void;
+  releaseClock: () => void;
 };
 
 export function useGameEngine(
@@ -50,6 +56,7 @@ export function useGameEngine(
   const statusRef = useRef<GameStatus>('idle');
   const gameStateRef = useRef<GameState>({ score: 0, streak: 0 });
   const answerCountRef = useRef(0);
+  const isClockHeldRef = useRef(false);
 
   const updateProblem = useCallback((next: Problem | null) => {
     problemRef.current = next;
@@ -80,6 +87,7 @@ export function useGameEngine(
   const start = useCallback(() => {
     updateGameState({ score: 0, streak: 0 });
     answerCountRef.current = 0;
+    isClockHeldRef.current = false;
     setLastAnswer(null);
     updateProblem(generator(difficulty));
     updateStatus('playing');
@@ -122,9 +130,30 @@ export function useGameEngine(
     if (statusRef.current !== 'paused') {
       return;
     }
-    resumeTimer();
+    // A hold outlasts a pause: the clock stays stopped until its own release.
+    if (!isClockHeldRef.current) {
+      resumeTimer();
+    }
     updateStatus('playing');
   }, [resumeTimer, updateStatus]);
+
+  const holdClock = useCallback(() => {
+    isClockHeldRef.current = true;
+    if (statusRef.current === 'playing') {
+      pauseTimer();
+    }
+  }, [pauseTimer]);
+
+  const releaseClock = useCallback(() => {
+    if (!isClockHeldRef.current) {
+      return;
+    }
+    isClockHeldRef.current = false;
+    // If the round was paused meanwhile, its own resume restarts the clock.
+    if (statusRef.current === 'playing') {
+      resumeTimer();
+    }
+  }, [resumeTimer]);
 
   return {
     problem,
@@ -138,5 +167,7 @@ export function useGameEngine(
     submitAnswer,
     pause,
     resume,
+    holdClock,
+    releaseClock,
   };
 }
