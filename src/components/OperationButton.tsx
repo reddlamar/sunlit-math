@@ -2,7 +2,7 @@ import React from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { useShake } from './useShake';
-import { fontFamily, operationColors, staticColors } from '../theme/tokens';
+import { fontFamily, operationColors, radius, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
 import { operationTileSize, scaled, useLayout } from '../layout/layout';
 import type { Operation } from '../types/game';
@@ -66,7 +66,7 @@ export function OperationButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 32,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
     ...cardShadow({ elevation: 6, opacity: 0.18, radius: 8 }),

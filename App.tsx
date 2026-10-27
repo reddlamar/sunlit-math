@@ -2,7 +2,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts, Baloo2_500Medium, Baloo2_700Bold, Baloo2_800ExtraBold } from '@expo-google-fonts/baloo-2';
+import {
+  useFonts,
+  Baloo2_500Medium,
+  Baloo2_600SemiBold,
+  Baloo2_700Bold,
+  Baloo2_800ExtraBold,
+} from '@expo-google-fonts/baloo-2';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { PurchaseProvider } from './src/purchases/PurchaseContext';
@@ -19,6 +25,7 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const [fontsLoaded] = useFonts({
     Baloo2_500Medium,
+    Baloo2_600SemiBold,
     Baloo2_700Bold,
     Baloo2_800ExtraBold,
   });
