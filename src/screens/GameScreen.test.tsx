@@ -38,6 +38,15 @@ jest.mock('@react-navigation/native', () => ({
   },
 }));
 
+// Every call the result screen makes while a round ends; each resolves, with no scores yet.
+function mockScoresRepository() {
+  jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+  jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
+  jest.mocked(scoresRepository.getLastPlayerName).mockResolvedValue('');
+  jest.mocked(scoresRepository.setLastPlayerName).mockResolvedValue(undefined);
+  jest.mocked(scoresRepository.setScoreAvatar).mockResolvedValue(undefined);
+}
+
 function makeNavigation() {
   return {
     navigate: jest.fn(),
@@ -81,7 +90,7 @@ describe('GameScreen', () => {
     jest.clearAllMocks();
     mockPreventRemove.prevent = false;
     mockPreventRemove.callback = null;
-    jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+    mockScoresRepository();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
 
@@ -234,82 +243,88 @@ describe('GameScreen', () => {
     expect(getByTestId('score-value')).toHaveTextContent('Score 0');
   });
 
-  it('shows the name entry modal once the timer runs out, then a summary after saving, then the get ready modal again on Play Again', async () => {
-    const navigation = makeNavigation();
-    const { getByTestId, getByText, getByPlaceholderText, queryByPlaceholderText, queryByText } =
-      await renderGameScreen(navigation);
+  it('shows the result once the timer runs out, then the get ready modal again on Play Again', async () => {
+    const { getByTestId, getByText, queryByText, queryByTestId } = await renderGameScreen();
     await dismissGetReadyModal(getByTestId);
 
     await act(async () => {
       jest.advanceTimersByTime(60000);
     });
 
-    expect(getByText(/Time's up!/)).toBeTruthy();
-
-    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
-    await fireEvent.press(getByText('Save'));
-
     await waitFor(() => {
       expect(getByTestId('play-again-button')).toBeTruthy();
     });
+    expect(getByText('Pick your player')).toBeTruthy();
+    expect(queryByTestId('answer-grid')).toBeNull();
 
     await fireEvent.press(getByTestId('play-again-button'));
 
     expect(getByTestId('get-ready-start-button')).toBeTruthy();
-    // The stale name-entry modal from the round that just ended must not
-    // still be showing underneath/alongside the Get Ready modal.
-    expect(queryByPlaceholderText('Your name')).toBeNull();
-    expect(queryByText(/Time's up!/)).toBeNull();
+    // The result from the round that just ended must not still be showing.
+    expect(queryByText('Pick your player')).toBeNull();
   });
 
-  it("says '1 point' on the summary when the score is exactly one", async () => {
-    const { getByTestId, findAllByTestId, getByText, getByPlaceholderText } =
-      await renderGameScreen();
+  it('saves the score as soon as the round ends, under the default animal', async () => {
+    const { getByTestId } = await renderGameScreen();
+    await dismissGetReadyModal(getByTestId);
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+
+    await waitFor(() => {
+      expect(scoresRepository.addScore).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Fox',
+          avatar: 'fox',
+          score: 0,
+          operation: 'addition',
+          difficulty: 'easy',
+        })
+      );
+    });
+  });
+
+  it("says '1 point' on the result when the score is exactly one", async () => {
+    const { getByTestId, findAllByTestId, getByText } = await renderGameScreen();
     await dismissGetReadyModal(getByTestId);
     await fireEvent.press(await findChoice(getByTestId, findAllByTestId, true));
     await act(async () => {
       jest.advanceTimersByTime(60000);
     });
-    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
-    await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
-      expect(getByText('1 point')).toBeTruthy();
+      expect(getByText('point')).toBeTruthy();
     });
+    expect(getByTestId('summary-score')).toHaveTextContent('1');
   });
 
-  it("says 'points' on the summary for any other score", async () => {
-    const { getByTestId, getByText, getByPlaceholderText } = await renderGameScreen();
+  it("says 'points' on the result for any other score", async () => {
+    const { getByTestId, getByText } = await renderGameScreen();
     await dismissGetReadyModal(getByTestId);
     await act(async () => {
       jest.advanceTimersByTime(60000);
     });
-    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Lin');
-    await fireEvent.press(getByText('Save'));
 
     await waitFor(() => {
-      expect(getByText('0 points')).toBeTruthy();
+      expect(getByText('points')).toBeTruthy();
     });
+    expect(getByTestId('summary-score')).toHaveTextContent('0');
   });
 
-  it('navigates to the leaderboard from the score summary', async () => {
+  it('goes home from the result', async () => {
     const navigation = makeNavigation();
-    const { getByTestId, getByText, getByPlaceholderText } = await renderGameScreen(navigation);
+    const { getByTestId } = await renderGameScreen(navigation);
     await dismissGetReadyModal(getByTestId);
-
     await act(async () => {
       jest.advanceTimersByTime(60000);
     });
-
-    await fireEvent.changeText(getByPlaceholderText('Your name'), 'Ada');
-    await fireEvent.press(getByText('Save'));
-
     await waitFor(() => {
-      expect(getByTestId('play-again-button')).toBeTruthy();
+      expect(getByTestId('home-button')).toBeTruthy();
     });
 
-    await fireEvent.press(getByText('View Leaderboard'));
-    expect(navigation.navigate).toHaveBeenCalledWith('Leaderboard', { operation: 'addition' });
+    await fireEvent.press(getByTestId('home-button'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('MainTabs', { screen: 'Home' });
   });
 
   it('goes back home from the get ready modal without starting a round', async () => {
@@ -416,7 +431,7 @@ describe('GameScreen layout', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
-    jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+    mockScoresRepository();
   });
 
   afterEach(() => {

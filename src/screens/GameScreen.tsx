@@ -11,10 +11,10 @@ import { QuestionCard } from '../components/QuestionCard';
 import { StatChip } from '../components/StatChip';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { TimerBar } from '../components/TimerBar';
-import { NameEntryModal } from '../components/NameEntryModal';
 import { RoundSummary } from '../components/RoundSummary';
 import { GetReadyModal } from '../components/GetReadyModal';
 import { useAnswerFeedback } from '../components/useAnswerFeedback';
+import { useRoundResult } from '../components/useRoundResult';
 import { useShake } from '../components/useShake';
 import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import { useGameEngine } from '../game/useGameEngine';
@@ -23,13 +23,11 @@ import { Icon } from '../components/icons/Icon';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import { frameSize, gameArrangement, READABLE_MAX_WIDTH, useLayout } from '../layout/layout';
 import type { GameScreenProps } from '../navigation/types';
-import type { ScoreEntry } from '../types/game';
 
 export function GameScreen({ navigation, route }: GameScreenProps) {
   const { operation } = route.params;
   const { colors, difficulty } = useSettings();
   const engine = useGameEngine(operation, difficulty);
-  const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
   const { shake, shakeStyle } = useShake();
   const reveal = useAnswerFeedback(engine.lastAnswer);
@@ -100,7 +98,6 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   };
 
   const handlePlayAgain = () => {
-    setSavedEntry(null);
     setIsGetReadyVisible(true);
   };
 
@@ -121,18 +118,32 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
     ]);
   };
 
-  const handleViewLeaderboard = () => {
-    navigation.navigate('Leaderboard', { operation });
-  };
+  // engine.status stays 'ended' until the next round's engine.start() actually runs (see
+  // handleRoundReady), so without the isGetReadyVisible check the result would still be
+  // showing for the entire Get Ready screen after Play Again.
+  const isRoundOver = engine.status === 'ended' && !isGetReadyVisible;
+  const result = useRoundResult({
+    isOver: isRoundOver,
+    score: engine.score,
+    operation,
+    difficulty,
+  });
 
-  if (savedEntry) {
+  if (isRoundOver) {
+    if (!result.isReady) {
+      return <View style={[styles.container, { backgroundColor: colors.background }]} />;
+    }
     return (
       <RoundSummary
-        name={savedEntry.name}
-        score={savedEntry.score}
-        operation={operation}
+        score={engine.score}
+        previousBest={result.previousBest}
+        avatar={result.avatar}
+        topScores={result.topScores}
+        saveFailed={result.status === 'failed'}
+        onSelectAvatar={result.chooseAvatar}
+        onRetrySave={result.retry}
         onPlayAgain={handlePlayAgain}
-        onViewLeaderboard={handleViewLeaderboard}
+        onHome={() => navigation.navigate('MainTabs', { screen: 'Home' })}
       />
     );
   }
@@ -257,15 +268,6 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
         </View>
       )}
 
-      {/* engine.status stays 'ended' until the next round's engine.start() actually
-          runs (see handleRoundReady), so without the isGetReadyVisible check this
-          would still be visible for the entire Get Ready screen after Play Again. */}
-      <NameEntryModal
-        visible={engine.status === 'ended' && !isGetReadyVisible}
-        score={engine.score}
-        operation={operation}
-        onSaved={setSavedEntry}
-      />
       <GetReadyModal
         visible={isGetReadyVisible}
         onReady={handleRoundReady}

@@ -4,7 +4,6 @@ import { render } from '@testing-library/react-native';
 import { AnswerButton } from './AnswerButton';
 import { AnswerGrid } from './AnswerGrid';
 import { OperationButton } from './OperationButton';
-import { RoundSummary } from './RoundSummary';
 import { SegmentedControl } from './SegmentedControl';
 import { TimerBar } from './TimerBar';
 import { SettingsProvider } from '../settings/SettingsContext';
@@ -99,28 +98,6 @@ describe('components adapt to the window', () => {
         height: trackHeight,
       });
       expect(getByText('30 seconds left')).toHaveStyle({ fontSize: wordsSize });
-    });
-  });
-
-  describe('RoundSummary', () => {
-    it.each([
-      ['a phone', PHONE, 24, 40],
-      ['an iPad', IPAD_PORTRAIT, 33.6, 56],
-    ])('sizes the title and score on %s', async (_name, window, titleSize, scoreSize) => {
-      setWindow(window);
-      const { getByText } = await render(
-        <SettingsProvider>
-          <RoundSummary
-            name="Maya"
-            score={12}
-            operation="addition"
-            onPlayAgain={jest.fn()}
-            onViewLeaderboard={jest.fn()}
-          />
-        </SettingsProvider>
-      );
-      expect(getByText('Nice work, Maya!')).toHaveStyle({ fontSize: titleSize });
-      expect(getByText('12 points')).toHaveStyle({ fontSize: scoreSize });
     });
   });
 

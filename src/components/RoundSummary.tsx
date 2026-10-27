@@ -1,57 +1,187 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from './AnimatedPressable';
+import { AvatarPicker } from './AvatarPicker';
+import { Stars } from './Stars';
+import { Sunny } from './Sunny';
+import { TopPlayersPreview } from './TopPlayersPreview';
+import { starsForScore } from '../game/stars';
 import { useSettings } from '../settings/SettingsContext';
-import { cardShadow } from '../theme/shadow';
-import { fontFamily, operationColors, staticColors } from '../theme/tokens';
-import { scaled, useLayout } from '../layout/layout';
-import type { Operation } from '../types/game';
+import { fontFamily, radius, staticColors } from '../theme/tokens';
+import { frameSize, READABLE_MAX_WIDTH, useLayout } from '../layout/layout';
+import { pointsLabel } from '../utils/format';
+import type { AvatarId, ScoreEntry } from '../types/game';
 
-type RoundSummaryProps = {
-  name: string;
-  score: number;
-  operation: Operation;
-  onPlayAgain: () => void;
-  onViewLeaderboard: () => void;
+type SummarySizes = {
+  sunny: number;
+  title: number;
+  stars: number;
+  avatar: number;
+  playHeight: number;
+  homeHeight: number;
 };
 
-/** Shown after a round's score has been saved. */
+const SIZES = {
+  // A phone turned sideways has little height, so everything is drawn smaller there.
+  short: { sunny: 96, title: 26, stars: 40, avatar: 48, playHeight: 56, homeHeight: 48 },
+  compact: { sunny: 120, title: 32, stars: 56, avatar: 48, playHeight: 64, homeHeight: 56 },
+  medium: { sunny: 200, title: 44, stars: 64, avatar: 56, playHeight: 72, homeHeight: 64 },
+  wide: { sunny: 150, title: 44, stars: 64, avatar: 56, playHeight: 72, homeHeight: 72 },
+} satisfies Record<string, SummarySizes>;
+
+const TITLES = { 1: 'Good try!', 2: 'Great job!', 3: 'Amazing!' } as const;
+const TOP_PLAYERS_WIDTH = 420;
+
+type RoundSummaryProps = {
+  score: number;
+  /** The player's best on this operation and level before this round; null if none. */
+  previousBest: number | null;
+  avatar: AvatarId;
+  /** The best few scores, shown beside the result on a wide landscape window. */
+  topScores: ScoreEntry[];
+  /** True when the score could not be saved. */
+  saveFailed: boolean;
+  onSelectAvatar: (id: AvatarId) => void;
+  onRetrySave: () => void;
+  onPlayAgain: () => void;
+  onHome: () => void;
+};
+
+/** Shown when a round ends: how it went, and who is playing. */
 export function RoundSummary({
-  name,
   score,
-  operation,
+  previousBest,
+  avatar,
+  topScores,
+  saveFailed,
+  onSelectAvatar,
+  onRetrySave,
   onPlayAgain,
-  onViewLeaderboard,
+  onHome,
 }: RoundSummaryProps) {
   const { colors } = useSettings();
-  const { scale } = useLayout();
+  const layout = useLayout();
+  const size = frameSize(layout);
+  const sizes: SummarySizes = SIZES[layout.isShort ? 'short' : size];
+  const isWide = size === 'wide';
+  const stars = starsForScore(score, previousBest);
+  const isNewBest = score > 0 && (previousBest === null || score > previousBest);
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[styles.emoji, { fontSize: scaled(56, scale) }]}>🎉</Text>
-        <Text style={[styles.title, { color: colors.textPrimary, fontSize: scaled(24, scale) }]}>
-          Nice work, {name}!
+  const hero = (
+    <View style={styles.hero}>
+      <Sunny size={sizes.sunny} expression="cheer" />
+      <Text
+        accessibilityRole="header"
+        style={[
+          styles.title,
+          { color: colors.textPrimary, fontSize: sizes.title, lineHeight: sizes.title * 1.1 },
+        ]}
+      >
+        {TITLES[stars]}
+      </Text>
+      <Stars count={stars} size={sizes.stars} />
+    </View>
+  );
+
+  const details = (
+    <View style={styles.details}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text testID="summary-score" style={[styles.score, { color: colors.textPrimary }]}>
+          {score}
         </Text>
-        <Text
-          style={[styles.score, { color: operationColors[operation], fontSize: scaled(40, scale) }]}
-        >
-          {score} {Math.abs(score) === 1 ? 'point' : 'points'}
+        <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>
+          {pointsLabel(score)}
         </Text>
+        {(isNewBest || previousBest !== null) && (
+          <Text style={[styles.best, { color: colors.streak }]}>
+            {isNewBest ? 'New personal best!' : `Personal best: ${previousBest}`}
+          </Text>
+        )}
+      </View>
+
+      {saveFailed && (
+        <View style={styles.failure}>
+          <Text
+            accessibilityLiveRegion="polite"
+            style={[styles.failureText, { color: colors.danger }]}
+          >
+            {"Your score couldn't be saved."}
+          </Text>
+          <AnimatedPressable
+            testID="retry-save-button"
+            accessibilityRole="button"
+            onPress={onRetrySave}
+          >
+            <Text style={[styles.retry, { color: colors.accent }]}>Try again</Text>
+          </AnimatedPressable>
+        </View>
+      )}
+
+      <Text style={[styles.pickTitle, { color: colors.textPrimary }]}>Pick your player</Text>
+      <AvatarPicker selected={avatar} onSelect={onSelectAvatar} size={sizes.avatar} />
+
+      <View style={[styles.buttons, isWide && styles.buttonsWide]}>
         <AnimatedPressable
           testID="play-again-button"
           accessibilityRole="button"
-          wrapperStyle={styles.buttonWrapper}
-          style={[styles.button, { backgroundColor: operationColors[operation] }]}
+          wrapperStyle={isWide && styles.buttonWrapper}
+          style={[styles.button, { backgroundColor: colors.accent, height: sizes.playHeight }]}
           onPress={onPlayAgain}
         >
-          <Text style={styles.buttonLabel}>Play Again</Text>
+          <Text style={[styles.buttonLabel, { color: staticColors.onColor }]}>Play again</Text>
         </AnimatedPressable>
-        <AnimatedPressable accessibilityRole="button" onPress={onViewLeaderboard}>
-          <Text style={[styles.secondaryLabel, { color: colors.accent }]}>View Leaderboard</Text>
+        <AnimatedPressable
+          testID="home-button"
+          accessibilityRole="button"
+          wrapperStyle={isWide && styles.buttonWrapper}
+          style={[
+            styles.button,
+            styles.homeButton,
+            { borderColor: colors.border, height: sizes.homeHeight },
+          ]}
+          onPress={onHome}
+        >
+          <Text style={[styles.buttonLabel, { color: colors.textPrimary }]}>Home</Text>
         </AnimatedPressable>
       </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        testID="summary-scroll"
+        contentContainerStyle={[styles.content, isWide && styles.contentWide]}
+      >
+        {isWide ? (
+          <>
+            <View style={styles.resultPane}>
+              {hero}
+              {details}
+            </View>
+            <View
+              testID="summary-top-players"
+              style={[
+                styles.topPlayers,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <TopPlayersPreview scores={topScores} />
+            </View>
+          </>
+        ) : layout.isShort ? (
+          <View style={styles.sideways}>
+            {hero}
+            {details}
+          </View>
+        ) : (
+          <View style={styles.column}>
+            {hero}
+            {details}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -61,46 +191,123 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 20,
   },
-  emoji: {
-    marginBottom: 8,
+  contentWide: {
+    flexDirection: 'row',
+    gap: 48,
+    paddingHorizontal: 48,
   },
-  // alignItems centers each Text's box, but a name long enough to wrap makes the box
-  // full-width and its lines default to left-aligned, so centering must be explicit.
+  column: {
+    width: '100%',
+    maxWidth: READABLE_MAX_WIDTH,
+    gap: 20,
+  },
+  sideways: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 32,
+  },
+  resultPane: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 16,
+  },
+  hero: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  details: {
+    width: '100%',
+    maxWidth: READABLE_MAX_WIDTH,
+    alignItems: 'center',
+    gap: 16,
+  },
   title: {
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     textAlign: 'center',
-    marginBottom: 8,
+  },
+  card: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    borderRadius: radius.xl,
   },
   score: {
+    fontSize: 44,
+    // Baloo's digits stand taller than 44 dp of line, and are clipped by less.
+    lineHeight: 52,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    textAlign: 'center',
-    marginBottom: 32,
   },
-  buttonWrapper: {
-    marginBottom: 16,
+  scoreLabel: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontFamily: fontFamily.regular,
   },
-  button: {
-    borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    ...cardShadow({ elevation: 6, opacity: 0.18, radius: 8 }),
-  },
-  buttonLabel: {
-    color: staticColors.onColor,
-    fontSize: 19,
+  best: {
+    fontSize: 20,
+    lineHeight: 23,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },
-  secondaryLabel: {
+  failure: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  failureText: {
     fontSize: 16,
-    fontWeight: '600',
     fontFamily: fontFamily.regular,
+    textAlign: 'center',
+  },
+  retry: {
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+  },
+  pickTitle: {
+    fontSize: 20,
+    lineHeight: 23,
+    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+  },
+  buttons: {
+    width: '100%',
+    gap: 12,
+  },
+  buttonsWide: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  buttonWrapper: {
+    flex: 1,
+  },
+  button: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+  },
+  homeButton: {
+    borderWidth: 2,
+  },
+  buttonLabel: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+  },
+  topPlayers: {
+    width: TOP_PLAYERS_WIDTH,
+    paddingHorizontal: 28,
+    paddingVertical: 24,
+    borderWidth: 2,
+    borderRadius: radius.xl,
   },
 });
