@@ -6,7 +6,7 @@ import { operationInfo } from '../game/operations';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, radius } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
-import { homeSize, useLayout, type HomeSize } from '../layout/layout';
+import { frameSize, useLayout, type FrameSize } from '../layout/layout';
 import { formatPoints } from '../utils/format';
 import type { ScoreEntry } from '../types/game';
 
@@ -19,7 +19,7 @@ type CardSizes = {
   valueFont: string;
 };
 
-const SIZES: Record<HomeSize, CardSizes> = {
+const SIZES: Record<FrameSize, CardSizes> = {
   compact: {
     icon: 36,
     paddingHorizontal: 20,
@@ -54,7 +54,7 @@ type PersonalBestCardProps = {
 /** The player's highest score on this device. Tapping it opens the leaderboard. */
 export function PersonalBestCard({ best, onPress }: PersonalBestCardProps) {
   const { colors } = useSettings();
-  const sizes = SIZES[homeSize(useLayout())];
+  const sizes = SIZES[frameSize(useLayout())];
 
   return (
     <AnimatedPressable

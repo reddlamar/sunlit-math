@@ -2,14 +2,14 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { OperationButton } from './OperationButton';
 import { OPERATIONS } from '../game/operations';
-import type { HomeArrangement, HomeSize } from '../layout/layout';
+import type { HomeArrangement, FrameSize } from '../layout/layout';
 import type { Operation } from '../types/game';
 
 /** Medium tiles are 310 x 250 in the design; compact and sideways tiles are square. */
 const MEDIUM_TILE_ASPECT = 310 / 250;
 
 /** The space between tiles and the tile shape for each way Home can be arranged. */
-export function tileMetrics(arrangement: HomeArrangement, size: HomeSize) {
+export function tileMetrics(arrangement: HomeArrangement, size: FrameSize) {
   if (arrangement === 'twoPane') {
     // The tiles fill the whole pane, so they take whatever shape it leaves.
     return { gap: 24, aspectRatio: undefined };
@@ -22,7 +22,7 @@ export function tileMetrics(arrangement: HomeArrangement, size: HomeSize) {
 
 type OperationGridProps = {
   arrangement: HomeArrangement;
-  size: HomeSize;
+  size: FrameSize;
   isLocked: (operation: Operation) => boolean;
   onSelect: (operation: Operation) => void;
 };

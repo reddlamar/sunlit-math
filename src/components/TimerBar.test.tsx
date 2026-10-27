@@ -5,7 +5,9 @@ import { TimerBar } from './TimerBar';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { dark, light } from '../theme/tokens';
 import { hasStyleValue } from '../testUtils/styleAssertions';
+import { timerFillPercent } from '../testUtils/timer';
 
+const HIDDEN = { includeHiddenElements: true };
 const SETTINGS_STORAGE_KEY = 'math60_settings_v1';
 
 function renderTimerBar(props: React.ComponentProps<typeof TimerBar>) {
@@ -21,32 +23,54 @@ describe('TimerBar', () => {
     await AsyncStorage.clear();
   });
 
-  it('shows the remaining time in whole seconds', async () => {
+  it('says the remaining time in whole seconds', async () => {
     const { getByText } = await renderTimerBar({ timeLeft: 45300, duration: 60000 });
-    expect(getByText('46')).toBeTruthy();
+    expect(getByText('46 seconds left')).toBeTruthy();
+  });
+
+  it('says a single second in the singular', async () => {
+    const { getByText } = await renderTimerBar({ timeLeft: 800, duration: 60000 });
+    expect(getByText('1 second left')).toBeTruthy();
   });
 
   it('rounds a fully-expired timer down to 0', async () => {
     const { getByText } = await renderTimerBar({ timeLeft: 0, duration: 60000 });
-    expect(getByText('0')).toBeTruthy();
+    expect(getByText('0 seconds left')).toBeTruthy();
   });
 
-  it('exposes the remaining fraction for the visual bar via accessibility value', async () => {
+  it('fills the bar to the remaining fraction', async () => {
     const { getByTestId } = await renderTimerBar({ timeLeft: 30000, duration: 60000 });
-    const bar = getByTestId('timer-bar-fill');
-    expect(bar.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 50 });
+    expect(timerFillPercent(getByTestId('timer-bar-fill', HIDDEN))).toBe(50);
   });
 
-  it('colors the bar fill and the seconds text from the theme, not a hardcoded value', async () => {
+  it('never overfills or underfills the bar', async () => {
+    const over = await renderTimerBar({ timeLeft: 90000, duration: 60000 });
+    expect(timerFillPercent(over.getByTestId('timer-bar-fill', HIDDEN))).toBe(100);
+  });
+
+  it('hides the bar from screen readers, leaving the words to say the time', async () => {
+    const { getByTestId } = await renderTimerBar({ timeLeft: 30000, duration: 60000 });
+    const track = getByTestId('timer-bar-track', HIDDEN);
+    expect(track.props.accessibilityElementsHidden).toBe(true);
+    expect(track.props.importantForAccessibility).toBe('no-hide-descendants');
+  });
+
+  it('colors the bar fill and the words from the theme, not a hardcoded value', async () => {
     const { getByTestId, getByText } = await renderTimerBar({ timeLeft: 30000, duration: 60000 });
 
     expect(
-      hasStyleValue(getByTestId('timer-bar-fill').props.style, 'backgroundColor', light.timer)
+      hasStyleValue(
+        getByTestId('timer-bar-fill', HIDDEN).props.style,
+        'backgroundColor',
+        light.timer
+      )
     ).toBe(true);
-    expect(hasStyleValue(getByText('30').props.style, 'color', light.timer)).toBe(true);
+    expect(
+      hasStyleValue(getByText('30 seconds left').props.style, 'color', light.textSecondary)
+    ).toBe(true);
   });
 
-  it('switches to the dark theme timer color once the player has picked dark mode', async () => {
+  it('switches to the dark theme colors once the player has picked dark mode', async () => {
     await AsyncStorage.setItem(
       SETTINGS_STORAGE_KEY,
       JSON.stringify({ muted: false, theme: 'dark', difficulty: 'easy' })
@@ -56,9 +80,15 @@ describe('TimerBar', () => {
 
     await waitFor(() => {
       expect(
-        hasStyleValue(getByTestId('timer-bar-fill').props.style, 'backgroundColor', dark.timer)
+        hasStyleValue(
+          getByTestId('timer-bar-fill', HIDDEN).props.style,
+          'backgroundColor',
+          dark.timer
+        )
       ).toBe(true);
     });
-    expect(hasStyleValue(getByText('30').props.style, 'color', dark.timer)).toBe(true);
+    expect(
+      hasStyleValue(getByText('30 seconds left').props.style, 'color', dark.textSecondary)
+    ).toBe(true);
   });
 });

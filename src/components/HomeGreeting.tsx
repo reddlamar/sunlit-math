@@ -3,11 +3,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Sunny } from './Sunny';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
-import { homeSize, useLayout, type HomeSize } from '../layout/layout';
+import { frameSize, useLayout, type FrameSize } from '../layout/layout';
 
 type GreetingSizes = { sunny: number; title: number; subtitle: number };
 
-const SIZES: Record<'short' | HomeSize, GreetingSizes> = {
+const SIZES: Record<'short' | FrameSize, GreetingSizes> = {
   // A phone turned sideways has little height to spare.
   short: { sunny: 64, title: 26, subtitle: 16 },
   compact: { sunny: 96, title: 32, subtitle: 18 },
@@ -19,7 +19,7 @@ const SIZES: Record<'short' | HomeSize, GreetingSizes> = {
 export function HomeGreeting() {
   const { colors } = useSettings();
   const layout = useLayout();
-  const size = homeSize(layout);
+  const size = frameSize(layout);
   const sizes = SIZES[layout.isShort ? 'short' : size];
   const isStacked = size === 'wide';
 

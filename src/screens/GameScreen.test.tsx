@@ -13,6 +13,7 @@ import {
 import * as scoresRepository from '../storage/scoresRepository';
 import * as sounds from '../audio/sounds';
 import type { GameScreenProps } from '../navigation/types';
+import { timerFillPercent } from '../testUtils/timer';
 
 jest.mock('../storage/scoresRepository');
 
@@ -118,7 +119,7 @@ describe('GameScreen', () => {
 
     await fireEvent.press(correctChoice);
 
-    expect(getByTestId('score-value').props.children).toBe(1);
+    expect(getByTestId('score-value')).toHaveTextContent('Score 1');
   });
 
   it('plays the correct sound for a right answer and the wrong sound (with a shake) for a wrong one', async () => {
@@ -167,13 +168,13 @@ describe('GameScreen', () => {
     await dismissGetReadyModal(getByTestId);
 
     await fireEvent.press(getByTestId('pause-button'));
-    const secondsAtPause = getByTestId('timer-bar-fill').props.accessibilityValue.now;
+    const secondsAtPause = timerFillPercent(getByTestId('timer-bar-fill', { includeHiddenElements: true }));
 
     await act(async () => {
       jest.advanceTimersByTime(5000);
     });
 
-    expect(getByTestId('timer-bar-fill').props.accessibilityValue.now).toBe(secondsAtPause);
+    expect(timerFillPercent(getByTestId('timer-bar-fill', { includeHiddenElements: true }))).toBe(secondsAtPause);
   });
 
   it('restart shows the get ready modal again, and starting resets score and the timer', async () => {
@@ -185,7 +186,7 @@ describe('GameScreen', () => {
     const choices = await findAllByTestId('answer-choice');
     const correctChoice = choices.find((c) => c.props.children === a + b)!;
     await fireEvent.press(correctChoice);
-    expect(getByTestId('score-value').props.children).toBe(1);
+    expect(getByTestId('score-value')).toHaveTextContent('Score 1');
 
     await act(async () => {
       jest.advanceTimersByTime(5000);
@@ -198,8 +199,8 @@ describe('GameScreen', () => {
 
     await dismissGetReadyModal(getByTestId);
 
-    expect(getByTestId('score-value').props.children).toBe(0);
-    expect(getByTestId('timer-bar-fill').props.accessibilityValue.now).toBe(100);
+    expect(getByTestId('score-value')).toHaveTextContent('Score 0');
+    expect(timerFillPercent(getByTestId('timer-bar-fill', { includeHiddenElements: true }))).toBe(100);
     expect(await findAllByTestId('answer-choice')).toHaveLength(choices.length);
   });
 
@@ -230,7 +231,7 @@ describe('GameScreen', () => {
     await dismissGetReadyModal(getByTestId);
 
     expect(await findAllByTestId('answer-choice')).not.toHaveLength(0);
-    expect(getByTestId('score-value').props.children).toBe(0);
+    expect(getByTestId('score-value')).toHaveTextContent('Score 0');
   });
 
   it('shows the name entry modal once the timer runs out, then a summary after saving, then the get ready modal again on Play Again', async () => {
@@ -443,10 +444,17 @@ describe('GameScreen layout', () => {
     expect(getByTestId('top-bar')).toHaveStyle({ flexDirection: 'row' });
   });
 
-  it('keeps the timer above the stats row when there is room', async () => {
+  it('stacks the stats in a side panel beside the play area on a wide landscape window', async () => {
     setWindow(IPAD_LANDSCAPE);
+    const { getByTestId, queryByTestId } = await startRound();
+    expect(getByTestId('top-bar')).toHaveStyle({ width: 260 });
+    expect(queryByTestId('game-column')).toBeNull();
+  });
+
+  it('keeps one readable column on an iPad held upright', async () => {
+    setWindow(IPAD_PORTRAIT);
     const { getByTestId } = await startRound();
-    expect(StyleSheet.flatten(getByTestId('top-bar').props.style).flexDirection).not.toBe('row');
+    expect(getByTestId('game-column')).toHaveStyle({ maxWidth: 680 });
   });
 
   it('puts the question beside the answers when the window is wider than tall', async () => {
@@ -456,17 +464,21 @@ describe('GameScreen layout', () => {
   });
 
   it.each([
-    ['a phone', PHONE, 48],
-    ['an iPad', IPAD_PORTRAIT, 56],
-  ])('sizes the Pause button for %s', async (_name, window, size) => {
+    ['a phone', PHONE],
+    ['an iPad', IPAD_PORTRAIT],
+  ])('keeps the Pause button at 56 dp on %s', async (_name, window) => {
     setWindow(window);
     const { getByTestId } = await startRound();
-    expect(getByTestId('pause-button')).toHaveStyle({ width: size, height: size });
+    expect(getByTestId('pause-button')).toHaveStyle({ width: 56, height: 56 });
   });
 
-  it('grows the question on an iPad', async () => {
-    setWindow(IPAD_PORTRAIT);
+  it.each([
+    ['a phone', PHONE, 72],
+    ['an iPad', IPAD_PORTRAIT, 72],
+    ['a phone turned sideways', PHONE_LANDSCAPE, 48],
+  ])('sizes the question on %s', async (_name, window, fontSize) => {
+    setWindow(window);
     const { getByTestId } = await startRound();
-    expect(getByTestId('problem-question')).toHaveStyle({ fontSize: 61.6 });
+    expect(getByTestId('problem-question')).toHaveStyle({ fontSize });
   });
 });

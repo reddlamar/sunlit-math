@@ -3,6 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { GameScreen } from './GameScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import type { GameScreenProps } from '../navigation/types';
+import { timerFillPercent } from '../testUtils/timer';
 
 jest.mock('../storage/scoresRepository');
 jest.mock('@react-navigation/native', () => ({ usePreventRemove: jest.fn() }));
@@ -59,14 +60,14 @@ describe('GameScreen render cost', () => {
       jest.advanceTimersByTime(3000);
     });
     const rendersAfterStart = mockRenders.answerButton;
-    const secondsBefore = getByTestId('timer-bar-fill').props.accessibilityValue.now;
+    const secondsBefore = timerFillPercent(getByTestId('timer-bar-fill', { includeHiddenElements: true }));
 
     // 3 seconds of play = ~30 timer ticks, each of which re-renders the screen.
     await act(async () => {
       jest.advanceTimersByTime(3000);
     });
 
-    expect(getByTestId('timer-bar-fill').props.accessibilityValue.now).toBeLessThan(secondsBefore);
+    expect(timerFillPercent(getByTestId('timer-bar-fill', { includeHiddenElements: true }))).toBeLessThan(secondsBefore);
     expect(mockRenders.answerButton).toBe(rendersAfterStart);
   });
 });

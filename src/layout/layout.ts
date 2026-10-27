@@ -62,6 +62,11 @@ export function describeLayout(
   };
 }
 
+/** A wide window held sideways: the design's expanded frames, with room for two panes. */
+function isWideLandscape({ layoutClass, isShort, isLandscape }: Layout) {
+  return layoutClass === 'expanded' && isLandscape && !isShort;
+}
+
 /**
  * How Home arranges itself: tiles stacked under the greeting, a greeting and scores pane
  * beside the tiles on a wide landscape window, or a single row of tiles on a phone turned
@@ -69,18 +74,31 @@ export function describeLayout(
  */
 export type HomeArrangement = 'stacked' | 'twoPane' | 'row';
 
-export function homeArrangement({ layoutClass, isShort, isLandscape }: Layout): HomeArrangement {
-  if (isShort) {
+export function homeArrangement(layout: Layout): HomeArrangement {
+  if (layout.isShort) {
     return 'row';
   }
-  return layoutClass === 'expanded' && isLandscape ? 'twoPane' : 'stacked';
+  return isWideLandscape(layout) ? 'twoPane' : 'stacked';
 }
 
-/** The size set Home's pieces are drawn at: the design's compact, medium and wide frames. */
-export type HomeSize = 'compact' | 'medium' | 'wide';
+/**
+ * How the Game screen arranges itself: a column, a side panel of stats beside the play area
+ * on a wide landscape window, or the question beside the answers on a phone turned sideways.
+ */
+export type GameArrangement = 'stacked' | 'sidePanel' | 'sideways';
 
-export function homeSize(layout: Layout): HomeSize {
-  if (homeArrangement(layout) === 'twoPane') {
+export function gameArrangement(layout: Layout): GameArrangement {
+  if (layout.isShort) {
+    return 'sideways';
+  }
+  return isWideLandscape(layout) ? 'sidePanel' : 'stacked';
+}
+
+/** The size set screens are drawn at: the design's compact, medium and wide frames. */
+export type FrameSize = 'compact' | 'medium' | 'wide';
+
+export function frameSize(layout: Layout): FrameSize {
+  if (isWideLandscape(layout)) {
     return 'wide';
   }
   return layout.isShort || layout.layoutClass === 'compact' ? 'compact' : 'medium';
