@@ -1,10 +1,9 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
 import { LeaderboardScreen } from './LeaderboardScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
-import { fontFamily, light } from '../theme/tokens';
-import { hasStyleValue } from '../testUtils/styleAssertions';
 import {
   PHONE,
   PHONE_LANDSCAPE,
@@ -13,8 +12,11 @@ import {
   setWindow,
 } from '../testUtils/window';
 import type { LeaderboardScreenProps } from '../navigation/types';
+import type { ScoreEntry } from '../types/game';
 
 jest.mock('../storage/scoresRepository');
+
+const HIDDEN = { includeHiddenElements: true };
 
 function makeRoute(
   operation?: LeaderboardScreenProps['route']['params']['operation']
@@ -22,71 +24,76 @@ function makeRoute(
   return { key: 'Leaderboard', name: 'Leaderboard', params: { operation } };
 }
 
-function makeNavigation() {
-  return { navigate: jest.fn() } as unknown as LeaderboardScreenProps['navigation'];
-}
-
-function renderLeaderboard(
-  navigation: LeaderboardScreenProps['navigation'],
-  route: LeaderboardScreenProps['route']
-) {
+function renderLeaderboard(route = makeRoute()) {
   return render(
     <SettingsProvider>
-      <LeaderboardScreen navigation={navigation} route={route} />
+      <LeaderboardScreen navigation={{} as LeaderboardScreenProps['navigation']} route={route} />
     </SettingsProvider>
   );
 }
 
+const entry = (overrides: Partial<ScoreEntry>): ScoreEntry => ({
+  id: 'id',
+  name: 'Ada',
+  score: 20,
+  operation: 'addition',
+  createdAt: 1,
+  ...overrides,
+});
+
 describe('LeaderboardScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
   });
 
-  it('navigates back to Home when the home button is tapped', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
-    const navigation = makeNavigation();
+  afterEach(() => setWindow(PHONE));
 
-    const { getByLabelText } = await renderLeaderboard(navigation, makeRoute());
-
-    await fireEvent.press(getByLabelText('Go to home screen'));
-
-    expect(navigation.navigate).toHaveBeenCalledWith('MainTabs', { screen: 'Home' });
-  });
-
-  it('shows an empty state when there are no scores yet', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
-
-    const { findByText } = await renderLeaderboard(
-      {} as LeaderboardScreenProps['navigation'],
-      makeRoute()
-    );
+  it('shows an empty state with Sunny when there are no scores yet', async () => {
+    const { findByText, getByTestId } = await renderLeaderboard();
 
     expect(await findByText(/No scores yet/)).toBeTruthy();
+    expect(getByTestId('sunny', HIDDEN)).toBeTruthy();
   });
 
-  it('lists the top scores it loads on mount', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([
-      { id: '1', name: 'Ada', score: 20, operation: 'addition', createdAt: 1 },
-      { id: '2', name: 'Lin', score: 15, operation: 'addition', createdAt: 2 },
-    ]);
+  it('titles the screen as a heading', async () => {
+    const { getByRole } = await renderLeaderboard();
 
-    const { findByText } = await renderLeaderboard(
-      {} as LeaderboardScreenProps['navigation'],
-      makeRoute()
-    );
+    expect(getByRole('header')).toHaveTextContent('Leaderboard');
+  });
 
-    expect(await findByText('Ada')).toBeTruthy();
-    expect(await findByText('Lin')).toBeTruthy();
+  it('lists the top scores it loads, ranked from 1, each with its animal', async () => {
+    jest
+      .mocked(scoresRepository.getTopScores)
+      .mockResolvedValue([
+        entry({ id: '1', name: 'Fox', avatar: 'fox', score: 34 }),
+        entry({ id: '2', name: 'Maya', score: 15 }),
+      ]);
+
+    const { findByText, getAllByTestId, getByTestId } = await renderLeaderboard();
+
+    expect(await findByText('Fox')).toBeTruthy();
+    expect(await findByText('Maya')).toBeTruthy();
+    expect(getAllByTestId('score-row')).toHaveLength(2);
+    expect(getByTestId('avatar-fox', HIDDEN)).toBeTruthy();
+    // A score saved before avatars shows its first letter instead.
+    expect(getByTestId('avatar-initial', HIDDEN)).toBeTruthy();
     expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, undefined, undefined);
   });
 
-  it('refetches filtered by operation when a filter tab is tapped', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
+  it('opens on the operation it was asked to show', async () => {
+    const { getByTestId } = await renderLeaderboard(makeRoute('division'));
 
-    const { findByText, getByText } = await renderLeaderboard(
-      {} as LeaderboardScreenProps['navigation'],
-      makeRoute()
-    );
+    expect(getByTestId('filter-game-division').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    await waitFor(() => {
+      expect(scoresRepository.getTopScores).toHaveBeenCalledWith(10, 'division', undefined);
+    });
+  });
+
+  it('refetches filtered by operation when a game filter is tapped', async () => {
+    const { findByText, getByText } = await renderLeaderboard();
     await findByText(/No scores yet/);
 
     await fireEvent.press(getByText('×'));
@@ -97,12 +104,7 @@ describe('LeaderboardScreen', () => {
   });
 
   it('refetches filtered by difficulty when a level is tapped, keeping the operation filter', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
-
-    const { findByText, getByText } = await renderLeaderboard(
-      {} as LeaderboardScreenProps['navigation'],
-      makeRoute('division')
-    );
+    const { findByText, getByText } = await renderLeaderboard(makeRoute('division'));
     await findByText(/No scores yet/);
 
     await fireEvent.press(getByText('Hard'));
@@ -112,103 +114,106 @@ describe('LeaderboardScreen', () => {
     });
   });
 
-  it('labels each row with its operation and level, and omits the level for older scores', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([
-      { id: '1', name: 'Ada', score: 20, operation: 'addition', difficulty: 'hard', createdAt: 1 },
-      { id: '2', name: 'Lin', score: 15, operation: 'division', createdAt: 2 },
-    ]);
+  it('goes back to every game and every level with the All filters', async () => {
+    const { findByText, getByTestId } = await renderLeaderboard(makeRoute('division'));
+    await findByText(/No scores yet/);
+    await fireEvent.press(getByTestId('filter-level-hard'));
 
-    const { findByText, getAllByText, queryByText } = await renderLeaderboard(
-      {} as LeaderboardScreenProps['navigation'],
-      makeRoute()
-    );
+    await fireEvent.press(getByTestId('filter-game-all'));
+    await fireEvent.press(getByTestId('filter-level-all'));
+
+    await waitFor(() => {
+      expect(scoresRepository.getTopScores).toHaveBeenLastCalledWith(10, undefined, undefined);
+    });
+  });
+
+  it('ignores a slow answer for filters the player has already moved on from', async () => {
+    let resolveFirst: (scores: ScoreEntry[]) => void = () => {};
+    jest
+      .mocked(scoresRepository.getTopScores)
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)))
+      .mockResolvedValue([entry({ id: 'fresh', name: 'Fresh' })]);
+    const { getByText, findByText, queryByText } = await renderLeaderboard();
+
+    await fireEvent.press(getByText('+'));
+    expect(await findByText('Fresh')).toBeTruthy();
+    resolveFirst([entry({ id: 'stale', name: 'Stale' })]);
+
+    await waitFor(() => expect(queryByText('Stale')).toBeNull());
+  });
+
+  it('labels each row with its operation and level, and omits the level for older scores', async () => {
+    jest
+      .mocked(scoresRepository.getTopScores)
+      .mockResolvedValue([
+        entry({ id: '1', name: 'Ada', score: 20, difficulty: 'hard' }),
+        entry({ id: '2', name: 'Lin', score: 15, operation: 'division' }),
+      ]);
+
+    const { findByText, getAllByText, queryByText } = await renderLeaderboard();
 
     expect(await findByText('+ · Hard')).toBeTruthy();
-    // The older score shows just its operation: the '÷' in the filter row plus its own row.
+    // The older score shows just its operation: the '÷' filter plus its own row.
     expect(getAllByText('÷')).toHaveLength(2);
     expect(queryByText(/÷ ·/)).toBeNull();
   });
 
-  it('writes rank numbers in the app font, like everything else on the row', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(
-      ['a', 'b', 'c', 'd'].map((id, i) => ({
-        id,
-        name: id.toUpperCase(),
-        score: 10 - i,
-        operation: 'addition' as const,
-        createdAt: i,
-      }))
-    );
-
-    const { findByText } = await renderLeaderboard(makeNavigation(), makeRoute());
-
-    const rank = await findByText('4.');
-    expect(hasStyleValue(rank.props.style, 'fontFamily', fontFamily.bold)).toBe(true);
-  });
-});
-
-describe('LeaderboardScreen layout', () => {
-  afterEach(() => setWindow(PHONE));
-
-  it.each([
-    ['a phone', PHONE],
-    ['an iPad in landscape', IPAD_LANDSCAPE],
-  ])('keeps the list in a readable centered column on %s', async (_name, window) => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
-    setWindow(window);
-    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
-    expect(getByTestId('leaderboard-column')).toHaveStyle({ maxWidth: 640, alignSelf: 'center' });
-  });
-});
-
-describe('LeaderboardScreen readability', () => {
-  afterEach(() => setWindow(PHONE));
-
-  const fourScores = [1, 2, 3, 4].map((n) => ({
-    id: String(n),
-    name: `Player ${n}`,
-    score: 50 - n,
-    operation: 'addition' as const,
-    createdAt: n,
-  }));
-
-  it('draws ranks 4 and up in the theme text color so they stay visible in dark mode', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(fourScores);
-    const { findByText } = await renderLeaderboard(makeNavigation(), makeRoute());
-    expect(await findByText('4.')).toHaveStyle({ color: light.textPrimary });
-  });
-
-  it('grows the title, names and scores on an iPad', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(fourScores);
-    setWindow(IPAD_PORTRAIT);
-    const { findByText, getByText } = await renderLeaderboard(makeNavigation(), makeRoute());
-    expect(await findByText('Player 1')).toHaveStyle({ fontSize: 22.4 });
-    expect(getByText('49')).toHaveStyle({ fontSize: 25.2 });
-    expect(getByText(/Leaderboard/)).toHaveStyle({ fontSize: 36.4 });
-    expect(getByText('Hard')).toHaveStyle({ fontSize: 19.6 });
-  });
-});
-
-describe('LeaderboardScreen on a short window', () => {
-  afterEach(() => setWindow(PHONE));
-
-  it('scrolls the title and filters with the list, so the rows get the whole screen', async () => {
+  it('reads each row as one thing, with its place, name, points and operation', async () => {
     jest
       .mocked(scoresRepository.getTopScores)
       .mockResolvedValue([
-        { id: '1', name: 'Ada', score: 20, operation: 'addition', createdAt: 1 },
+        entry({ name: 'Fox', score: 34, operation: 'addition', difficulty: 'easy' }),
       ]);
-    setWindow(PHONE_LANDSCAPE);
-    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
-    const list = within(getByTestId('leaderboard-list'));
-    expect(list.getByText(/Leaderboard/)).toBeTruthy();
-    expect(list.getByText('All levels')).toBeTruthy();
-    expect(await list.findByText('Ada')).toBeTruthy();
+
+    const { findByLabelText } = await renderLeaderboard();
+
+    expect(await findByLabelText('1. Fox, 34 points, Addition, Easy')).toBeTruthy();
   });
 
-  it('keeps the empty message inside the list too', async () => {
-    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
-    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
-    expect(await within(getByTestId('leaderboard-list')).findByText(/No scores yet/)).toBeTruthy();
+  describe('layout', () => {
+    it.each([
+      ['a phone', PHONE],
+      ['an iPad in portrait', IPAD_PORTRAIT],
+    ])('keeps one readable centered column on %s', async (_name, window) => {
+      setWindow(window);
+      const { getByTestId, queryByTestId } = await renderLeaderboard();
+
+      expect(getByTestId('leaderboard-column')).toHaveStyle({ maxWidth: 680, alignSelf: 'center' });
+      expect(queryByTestId('leaderboard-side')).toBeNull();
+    });
+
+    it('puts the title and filters in a side column beside the list on a wide landscape window', async () => {
+      setWindow(IPAD_LANDSCAPE);
+      const { getByTestId, queryByTestId } = await renderLeaderboard();
+
+      expect(queryByTestId('leaderboard-column')).toBeNull();
+      const side = within(getByTestId('leaderboard-side'));
+      expect(side.getByText('Leaderboard')).toBeTruthy();
+      expect(side.getByText('Game')).toBeTruthy();
+      expect(side.getByText('Level')).toBeTruthy();
+      expect(side.getByText('All levels')).toBeTruthy();
+      expect(StyleSheet.flatten(getByTestId('leaderboard-side').props.style).width).toBe(300);
+      // The list is not inside the side column.
+      expect(side.queryByTestId('leaderboard-list')).toBeNull();
+    });
+
+    it('scrolls the title and filters with the list on a phone, so the rows get the screen', async () => {
+      jest.mocked(scoresRepository.getTopScores).mockResolvedValue([entry({})]);
+      setWindow(PHONE_LANDSCAPE);
+      const { getByTestId } = await renderLeaderboard();
+
+      const list = within(getByTestId('leaderboard-list'));
+      expect(list.getByText('Leaderboard')).toBeTruthy();
+      expect(list.getByText('All levels')).toBeTruthy();
+      expect(await list.findByText('Ada')).toBeTruthy();
+    });
+
+    it('keeps the empty message inside the list too', async () => {
+      const { getByTestId } = await renderLeaderboard();
+
+      expect(
+        await within(getByTestId('leaderboard-list')).findByText(/No scores yet/)
+      ).toBeTruthy();
+    });
   });
 });

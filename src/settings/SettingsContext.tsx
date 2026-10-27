@@ -19,8 +19,11 @@ const STORAGE_KEY = 'math60_settings_v1';
 
 type SettingsContextValue = Settings & {
   colors: ColorTokens;
+  /** What the player chose: a theme, or null to follow the phone's appearance (Auto). */
+  themePreference: Theme | null;
   setMuted: (next: boolean) => Promise<void>;
-  setTheme: (next: Theme) => Promise<void>;
+  /** Pass null to go back to following the phone. */
+  setTheme: (next: Theme | null) => Promise<void>;
   setDifficulty: (next: Difficulty) => Promise<void>;
 };
 
@@ -69,7 +72,7 @@ export function SettingsProvider({ children }: PropsWithChildren) {
   }, []);
 
   const setMuted = useCallback((muted: boolean) => update({ muted }), [update]);
-  const setTheme = useCallback((theme: Theme) => update({ theme }), [update]);
+  const setTheme = useCallback((theme: Theme | null) => update({ theme }), [update]);
   const setDifficulty = useCallback((difficulty: Difficulty) => update({ difficulty }), [update]);
 
   const theme = resolveTheme(stored.theme, systemScheme);
@@ -78,13 +81,14 @@ export function SettingsProvider({ children }: PropsWithChildren) {
     () => ({
       muted: stored.muted,
       theme,
+      themePreference: stored.theme,
       difficulty: stored.difficulty,
       colors: theme === 'dark' ? dark : light,
       setMuted,
       setTheme,
       setDifficulty,
     }),
-    [stored.muted, stored.difficulty, theme, setMuted, setTheme, setDifficulty]
+    [stored.muted, stored.difficulty, stored.theme, theme, setMuted, setTheme, setDifficulty]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

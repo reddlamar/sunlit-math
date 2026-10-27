@@ -99,10 +99,13 @@ answer grid. Sound can be turned off in Settings (haptics stay on).
 
 ([src/settings](../src/settings))
 
+The Settings tab is headed "Grown-up area": one card per setting, plus an "Unlock all
+games" card (until the purchase is owned) that opens the parental gate first.
+
 | Setting | Options | Notes |
 | --- | --- | --- |
 | Sound | On / Off | Mutes tap, correct, wrong and streak sounds |
-| Theme | Light / Dark | Until a theme is chosen, the app follows the phone's appearance live |
+| Theme | Auto / Light / Dark | Auto (the default) follows the phone's appearance live; picking Light or Dark fixes it |
 | Difficulty | Easy / Medium / Hard | Applies to the next round |
 
 ## Leaderboard
@@ -110,9 +113,10 @@ answer grid. Sound can be turned off in Settings (haptics stay on).
 ([src/storage/scoresRepository.ts](../src/storage/scoresRepository.ts))
 
 Scores are stored only on the device. The leaderboard shows the top 10, highest
-first, with gold/silver/bronze medals for the first three, and can be filtered by
-operation and by difficulty level (All levels, Easy, Medium, Hard). Each row shows the
-operation and level the score was earned on. Scores saved before 1.2.2 have no level; they
+first, each row showing its place, the player's animal (or an initial, for older scores
+saved with a typed name), the score, and the operation and level it was earned on. It can
+be filtered by game and by difficulty level (All levels, Easy, Medium, Hard); on a wide
+landscape window the title and filters sit in a column beside the list. Scores saved before 1.2.2 have no level; they
 appear under "All levels" only. Nothing is sent anywhere; see the [privacy policy](privacy-policy.html).
 
 ## Data stored on the device
