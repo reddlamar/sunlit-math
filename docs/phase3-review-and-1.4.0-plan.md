@@ -35,7 +35,7 @@ about 100 files. Checks run on the merged code:
 
 | # | Severity | Finding | Options |
 | --- | --- | --- | --- |
-| 1 | **High** | `app.json` has `"userInterfaceStyle": "light"` (since v1). The built app declares `UIUserInterfaceStyle = Light`, so iOS always reports a light appearance. The new **Auto** theme, and the docs' claim that the app "follows the phone's appearance live", can therefore never go dark on iOS. Android is the same unless `expo-system-ui` is installed. | **Recommended:** set it to `"automatic"` (and add `expo-system-ui` for Android). Side effects: native alerts and the keyboard follow the phone, and a native rebuild is needed. Alternative: hide the Auto option and keep Light / Dark only. |
+| 1 | ~~High~~ **Fixed in #26** | `app.json` had `"userInterfaceStyle": "light"` (since v1), so iOS always reported a light appearance and the new **Auto** theme could never go dark. | #26 sets it to `"automatic"` and adds `expo-system-ui` (needed on Android). Checked on the iOS simulator: dark phone gives a dark app, and switching the phone to light flips it live. **Needs a native rebuild**; not yet run on an Android device. Native alerts and the keyboard now follow the phone too. |
 | 2 | Medium | Unselected segmented-control options (Settings) are told apart by a 2 px border that is 1.3:1 against the card in light and 1.5:1 in dark; WCAG asks for 3:1 for the edge of a control. The labels themselves are high-contrast and the chosen option is clearly filled, so it is usable, but faint. The border color comes straight from the Figma tokens. | Add a darker `controlBorder` token (about 3:1) and ask for it in Figma too. |
 | 3 | Low | The "+N" float is 2.97:1 in light mode (success green on cream), just under 3:1 for large text. It is decorative, hidden from screen readers and visible for under a second. | Leave, or darken the light success color (which would also darken the ✓ answer fill). |
 | 4 | Low | Home's "Personal best" is the best score overall; the result screen's "Personal best" is for that game and level. Same words, different meaning. | Rename Home's to "Best score", or leave. |
@@ -52,7 +52,7 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
 | Area | What to look for |
 | --- | --- |
 | **Dark theme** (all screens, iPhone and iPad) | Avatars and Sunny on dark; ✓ and ✗ answer fills and their dark text; filled game pills and their ring; level chip selected state; segmented controls; "Restore purchases" link; stars' empty outline; the floating tab bar and rail |
-| **Auto theme** | Only meaningful after decision #1. Set the phone to dark, choose Auto, confirm the app follows it live |
+| **Auto theme** | After #26: set the phone to dark, choose Auto, confirm the app follows it live (done on the iPhone 16 Pro simulator; repeat on iPad, on a real iPhone and on Android) |
 | **iPhone SE / 375 dp (12 and 13 mini)** | Six avatars on one line; game pills and level chips (they may wrap onto a second row; check it looks acceptable); the question card with a long sum; the Game screen's height; tab bar |
 | **iPad mini and 11"** | Landscape two-pane Home (the left pane scrolls on short iPads); Game side panel; result with Top players; rail label "SETTINGS" fits |
 | **Phone turned sideways** (never viewed) | Home row of four tiles, Game question beside answers, result, leaderboard, settings; the rail beside them |
@@ -72,7 +72,7 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
    simplest path is to **skip a public 1.3.0 and ship 1.4.0 directly**, since 1.4.0
    contains everything in it. Only one version can be in review at a time, so if 1.2.2 is
    still in review, 1.4.0 waits for it. (I cannot see App Store Connect from here.)
-2. **Finding #1** (dark appearance), because it changes native config and needs a rebuild.
+2. **Merge #26** (dark appearance). It changes native config, so every build from then on, including the Release-configuration check, needs the rebuild.
 3. **Finding #2**, if the control border should be darker before release.
 
 ### Steps
@@ -111,7 +111,7 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
 > - Bigger buttons, nicer colors, and a design made for iPad and tablets
 > - A new grown-up area for settings, with an Auto theme
 
-(Drop the Auto-theme line if finding #1 is not fixed first.)
+(Keep the Auto-theme line only if #26 ships in 1.4.0.)
 
 ### Rollback and risk
 
