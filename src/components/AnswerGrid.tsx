@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import { AnswerButton } from './AnswerButton';
 import { choiceColors } from '../theme/tokens';
+import { scaled, useLayout } from '../layout/layout';
 
 type AnswerGridProps = {
   choices: number[];
@@ -18,8 +19,12 @@ export const AnswerGrid = memo(function AnswerGrid({
   onAnswer,
   shakeStyle,
 }: AnswerGridProps) {
+  const { scale } = useLayout();
   return (
-    <Animated.View testID="answer-grid" style={[styles.choices, shakeStyle]}>
+    <Animated.View
+      testID="answer-grid"
+      style={[styles.choices, { maxWidth: scaled(440, scale) }, shakeStyle]}
+    >
       {choices.map((choice, index) => (
         <AnswerButton
           key={choice}
@@ -36,7 +41,6 @@ export const AnswerGrid = memo(function AnswerGrid({
 const styles = StyleSheet.create({
   choices: {
     width: '100%',
-    maxWidth: 440,
     paddingHorizontal: 16,
     flexDirection: 'row',
     flexWrap: 'wrap',

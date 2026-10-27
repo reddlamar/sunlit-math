@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
@@ -12,6 +12,7 @@ import { usePurchase } from '../purchases/PurchaseContext';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
+import { scaled, useLayout } from '../layout/layout';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
 
@@ -20,6 +21,8 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const [isUnlockModalVisible, setIsUnlockModalVisible] = useState(false);
   const { isUnlocked } = usePurchase();
   const { colors } = useSettings();
+  const { isLandscape, isShort, contentWidth, scale } = useLayout();
+  const labelSize = { fontSize: scaled(13, scale) };
 
   // Home stays mounted under the Game screen, so reload on every focus rather
   // than on mount; otherwise a score saved during a game never shows up here.
@@ -50,7 +53,8 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
       <View style={styles.header}>
         <Image
           source={require('../../assets/home-header-banner.png')}
-          style={styles.headerBanner}
+          testID="header-banner"
+          style={[styles.headerBanner, isShort && styles.headerBannerShort]}
           resizeMode="contain"
         />
         <AnimatedPressable
@@ -58,11 +62,17 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           accessibilityLabel="View leaderboard"
           onPress={() => navigation.navigate('Leaderboard', {})}
         >
-          <Text style={styles.leaderboardIcon}>🏆</Text>
+          <Text style={[styles.leaderboardIcon, { fontSize: 28 * scale }]}>🏆</Text>
         </AnimatedPressable>
       </View>
-      <View style={styles.content}>
-        <View style={styles.grid}>
+      <ScrollView
+        testID="home-scroll"
+        contentContainerStyle={[styles.content, isShort && styles.contentShort]}
+      >
+        <View
+          testID="operation-grid"
+          style={[styles.grid, !isLandscape && { maxWidth: contentWidth }]}
+        >
           {OPERATIONS.map(({ operation, symbol, label }) => (
             <OperationButton
               key={operation}
@@ -79,30 +89,38 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           accessibilityLabel="View top score on the leaderboard"
           style={[
             styles.topScoreCard,
+            isShort && styles.topScoreCardShort,
+            { maxWidth: contentWidth },
             { backgroundColor: colors.surface },
-            { borderColor: topScore ? operationColors[topScore.operation] : colors.border },
+            {
+              borderColor: topScore ? operationColors[topScore.operation] : colors.border,
+            },
           ]}
           onPress={() => navigation.navigate('Leaderboard', {})}
         >
-          <Text style={styles.topScoreIcon}>🏆</Text>
+          <Text style={[styles.topScoreIcon, { fontSize: scaled(30, scale) }]}>🏆</Text>
           {topScore ? (
             <View>
-              <Text style={[styles.topScoreLabel, { color: colors.textSecondary }]}>Top Score</Text>
-              <Text style={[styles.topScoreValue, { color: operationColors[topScore.operation] }]}>
+              <Text style={[styles.topScoreLabel, labelSize, { color: colors.textSecondary }]}>
+                Top Score
+              </Text>
+              <Text
+                style={[
+                  styles.topScoreValue,
+                  { color: operationColors[topScore.operation], fontSize: scaled(18, scale) },
+                ]}
+              >
                 {topScore.name} · {topScore.score}
               </Text>
             </View>
           ) : (
-            <Text style={[styles.topScoreLabel, { color: colors.textSecondary }]}>
+            <Text style={[styles.topScoreLabel, labelSize, { color: colors.textSecondary }]}>
               No scores yet — be the first!
             </Text>
           )}
         </AnimatedPressable>
-      </View>
-      <UnlockModal
-        visible={isUnlockModalVisible}
-        onClose={() => setIsUnlockModalVisible(false)}
-      />
+      </ScrollView>
+      <UnlockModal visible={isUnlockModalVisible} onClose={() => setIsUnlockModalVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -114,8 +132,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 12,
+  },
+  // The banner is 7:1; capping its width caps its height at 56 dp on a phone turned sideways.
+  headerBannerShort: {
+    maxWidth: 392,
   },
   headerBanner: {
     flex: 1,
@@ -126,17 +149,24 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   content: {
-    flex: 1,
     paddingTop: 32,
     paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  contentShort: {
+    paddingTop: 12,
   },
   grid: {
+    width: '100%',
+    alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 20,
   },
   topScoreCard: {
+    alignSelf: 'center',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 32,
@@ -145,19 +175,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     ...cardShadow({ elevation: 3, opacity: 0.12, radius: 6, offsetHeight: 4 }),
   },
+  topScoreCardShort: {
+    marginTop: 16,
+  },
   topScoreIcon: {
-    fontSize: 30,
     marginRight: 14,
   },
   topScoreLabel: {
-    fontSize: 13,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   topScoreValue: {
-    fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
     marginTop: 2,

@@ -15,6 +15,7 @@ import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
+import { scaled, useLayout } from '../layout/layout';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
 
@@ -25,6 +26,9 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
   const { shake, shakeStyle } = useShake();
+  const { isLandscape, isShort, contentWidth, scale } = useLayout();
+  // Play controls grow on tablets; never below 48 dp on a phone.
+  const controlSize = scale > 1 ? 56 : 48;
 
   const { submitAnswer, pause } = engine;
   const isRoundInProgress = engine.status === 'playing' || engine.status === 'paused';
@@ -118,10 +122,28 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.topBar}>
-        <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />
-        <View style={styles.statsRow}>
-          <Text testID="score-value" style={[styles.score, { color: operationColors[operation] }]}>
+      <View
+        testID="top-bar"
+        style={[
+          styles.topBar,
+          isShort && styles.topBarShort,
+          !isLandscape && { maxWidth: contentWidth },
+        ]}
+      >
+        <View style={isShort && styles.timerShort}>
+          <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />
+        </View>
+        <View style={[styles.statsRow, isShort && styles.statsRowShort]}>
+          <Text
+            testID="score-value"
+            style={[
+              styles.score,
+              {
+                color: operationColors[operation],
+                fontSize: scaled(26, scale),
+              },
+            ]}
+          >
             {engine.score}
           </Text>
           <View style={styles.controls}>
@@ -131,7 +153,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
                 accessibilityRole="button"
                 accessibilityLabel="Restart game"
                 wrapperStyle={styles.controlButtonWrapper}
-                style={[styles.controlButton, styles.restartButton]}
+                style={[styles.controlButton, styles.restartButton, controlStyle(controlSize)]}
                 onPress={handleRestartPress}
               >
                 <Text style={styles.controlIcon}>↻</Text>
@@ -142,7 +164,11 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
                 testID="pause-button"
                 accessibilityRole="button"
                 accessibilityLabel="Pause game"
-                style={[styles.controlButton, { backgroundColor: operationColors[operation] }]}
+                style={[
+                  styles.controlButton,
+                  { backgroundColor: operationColors[operation] },
+                  controlStyle(controlSize),
+                ]}
                 onPress={engine.pause}
               >
                 <Text style={styles.controlIcon}>⏸</Text>
@@ -154,7 +180,10 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
       </View>
 
       {engine.problem && (
-        <View style={styles.problemArea}>
+        <View
+          testID="problem-area"
+          style={[styles.problemArea, isLandscape && styles.problemAreaLandscape]}
+        >
           {engine.status === 'paused' ? (
             <View>
               <Text style={styles.pausedEmoji}>⏸</Text>
@@ -171,7 +200,14 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             </View>
           ) : (
             <>
-              <Text testID="problem-question" style={[styles.question, { color: colors.textPrimary }]}>
+              <Text
+                testID="problem-question"
+                style={[
+                  styles.question,
+                  { color: colors.textPrimary, fontSize: scaled(44, scale) },
+                  isLandscape && styles.questionLandscape,
+                ]}
+              >
                 {engine.problem.question}
               </Text>
               <AnswerGrid
@@ -203,13 +239,35 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   );
 }
 
+const controlStyle = (size: number) => ({
+  width: size,
+  height: size,
+  borderRadius: size / 2,
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   topBar: {
+    width: '100%',
+    alignSelf: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
+  },
+  // A phone turned sideways has about 360 dp of height, so the timer, score and
+  // controls share one row instead of stacking.
+  topBarShort: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timerShort: {
+    flex: 1,
+    marginRight: 16,
+  },
+  statsRowShort: {
+    marginTop: 0,
+    columnGap: 16,
   },
   statsRow: {
     flexDirection: 'row',
@@ -229,9 +287,6 @@ const styles = StyleSheet.create({
     marginRight: 18,
   },
   controlButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     ...cardShadow({ elevation: 3, opacity: 0.15, radius: 4 }),
@@ -248,6 +303,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Sideways, the question and the answers sit side by side so the board never
+  // has to squeeze into the little height a phone has.
+  problemAreaLandscape: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+  },
   pausedEmoji: {
     fontSize: 56,
     textAlign: 'center',
@@ -261,10 +322,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   question: {
-    fontSize: 44,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     marginBottom: 24,
+  },
+  questionLandscape: {
+    flex: 1,
+    textAlign: 'center',
+    marginBottom: 0,
   },
   primaryButtonWrapper: {
     marginBottom: 16,

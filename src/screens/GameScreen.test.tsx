@@ -1,8 +1,15 @@
 import React from 'react';
-import { Alert, AppState, type AlertButton } from 'react-native';
+import { Alert, AppState, StyleSheet, type AlertButton } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { GameScreen } from './GameScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
+import {
+  PHONE,
+  PHONE_LANDSCAPE,
+  IPAD_LANDSCAPE,
+  IPAD_PORTRAIT,
+  setWindow,
+} from '../testUtils/window';
 import * as scoresRepository from '../storage/scoresRepository';
 import * as sounds from '../audio/sounds';
 import type { GameScreenProps } from '../navigation/types';
@@ -364,7 +371,11 @@ describe('GameScreen', () => {
       mockPreventRemove.callback!({ data: { action } });
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith('Leave this game?', expect.any(String), expect.any(Array));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Leave this game?',
+      expect.any(String),
+      expect.any(Array)
+    );
     expect(getByTestId('resume-button')).toBeTruthy();
 
     await pressAlertButton('Leave');
@@ -399,3 +410,63 @@ async function findChoice(
   const choices = await findAllByTestId('answer-choice');
   return choices.find((c) => (c.props.children === a + b) === correct)!;
 }
+
+describe('GameScreen layout', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.clearAllMocks();
+    jest.mocked(scoresRepository.addScore).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    setWindow(PHONE);
+  });
+
+  async function startRound() {
+    const screen = await renderGameScreen();
+    await dismissGetReadyModal(screen.getByTestId);
+    return screen;
+  }
+
+  it('stacks the question above the answers upright', async () => {
+    setWindow(PHONE);
+    const { getByTestId } = await startRound();
+    expect(StyleSheet.flatten(getByTestId('problem-area').props.style).flexDirection).not.toBe(
+      'row'
+    );
+  });
+
+  it('puts score, timer and controls in one compact row on a short window', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await startRound();
+    expect(getByTestId('top-bar')).toHaveStyle({ flexDirection: 'row' });
+  });
+
+  it('keeps the timer above the stats row when there is room', async () => {
+    setWindow(IPAD_LANDSCAPE);
+    const { getByTestId } = await startRound();
+    expect(StyleSheet.flatten(getByTestId('top-bar').props.style).flexDirection).not.toBe('row');
+  });
+
+  it('puts the question beside the answers when the window is wider than tall', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await startRound();
+    expect(getByTestId('problem-area')).toHaveStyle({ flexDirection: 'row' });
+  });
+
+  it.each([
+    ['a phone', PHONE, 48],
+    ['an iPad', IPAD_PORTRAIT, 56],
+  ])('sizes the Pause button for %s', async (_name, window, size) => {
+    setWindow(window);
+    const { getByTestId } = await startRound();
+    expect(getByTestId('pause-button')).toHaveStyle({ width: size, height: size });
+  });
+
+  it('grows the question on an iPad', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { getByTestId } = await startRound();
+    expect(getByTestId('problem-question')).toHaveStyle({ fontSize: 61.6 });
+  });
+});

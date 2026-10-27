@@ -4,6 +4,7 @@ import { AnimatedPressable } from './AnimatedPressable';
 import { useShake } from './useShake';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
+import { operationTileSize, scaled, useLayout } from '../layout/layout';
 import type { Operation } from '../types/game';
 
 type OperationButtonProps = {
@@ -22,6 +23,8 @@ export function OperationButton({
   onPress,
 }: OperationButtonProps) {
   const { shake, shakeStyle } = useShake();
+  const layout = useLayout();
+  const size = operationTileSize(layout);
 
   const handlePress = () => {
     shake();
@@ -32,13 +35,25 @@ export function OperationButton({
     <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={locked ? `${label} (locked, unlock to play)` : label}
-      wrapperStyle={styles.wrapper}
-      style={[styles.button, { backgroundColor: operationColors[operation] }]}
+      style={[
+        styles.button,
+        {
+          backgroundColor: operationColors[operation],
+          width: size,
+          height: size,
+        },
+      ]}
       onPress={handlePress}
     >
       <Animated.View style={[styles.content, shakeStyle]}>
-        <Text style={styles.symbol}>{symbol}</Text>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.symbol, { fontSize: scaled(52, layout.scale) }]}>{symbol}</Text>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={[styles.label, { fontSize: scaled(19, layout.scale) }]}
+        >
+          {label}
+        </Text>
       </Animated.View>
       {locked && (
         <View style={styles.lockBadge}>
@@ -50,13 +65,7 @@ export function OperationButton({
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flexBasis: '42%',
-    maxWidth: 220,
-    aspectRatio: 1,
-  },
   button: {
-    flex: 1,
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
@@ -66,14 +75,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   symbol: {
-    fontSize: 52,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     color: staticColors.onColor,
   },
   label: {
     marginTop: 8,
-    fontSize: 19,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
     color: staticColors.onColor,

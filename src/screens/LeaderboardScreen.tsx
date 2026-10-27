@@ -8,6 +8,7 @@ import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
 import type { LeaderboardScreenProps } from '../navigation/types';
 import type { Difficulty, Operation, ScoreEntry } from '../types/game';
+import { READABLE_MAX_WIDTH, scaled, useLayout } from '../layout/layout';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -24,6 +25,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>(undefined);
   const [scores, setScores] = useState<ScoreEntry[]>([]);
   const { colors } = useSettings();
+  const { scale } = useLayout();
 
   const filters: { operation?: Operation; label: string; color: string }[] = [
     { operation: undefined, label: 'All', color: colors.accent },
@@ -46,16 +48,18 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
     };
   }, [operation, difficulty]);
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+  const header = (
+    <>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>🏆 Leaderboard</Text>
+        <Text style={[styles.title, { color: colors.textPrimary, fontSize: scaled(26, scale) }]}>
+          🏆 Leaderboard
+        </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go to home screen"
           onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
         >
-          <Text style={styles.homeIcon}>🏠</Text>
+          <Text style={{ fontSize: scaled(28, scale) }}>🏠</Text>
         </Pressable>
       </View>
 
@@ -74,7 +78,12 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
               ]}
               onPress={() => setOperation(filterOp)}
             >
-              <Text style={[styles.filterLabel, { color: active ? staticColors.onColor : color }]}>
+              <Text
+                style={[
+                  styles.filterLabel,
+                  { color: active ? staticColors.onColor : color, fontSize: scaled(19, scale) },
+                ]}
+              >
                 {label}
               </Text>
             </AnimatedPressable>
@@ -97,6 +106,7 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
               <Text
                 style={[
                   styles.levelLabel,
+                  { fontSize: scaled(14, scale) },
                   { color: active ? colors.accent : colors.textSecondary },
                   active && styles.levelLabelActive,
                 ]}
@@ -107,16 +117,26 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
           );
         })}
       </View>
+    </>
+  );
 
-      {scores.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🎯</Text>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No scores yet — be the first!
-          </Text>
-        </View>
-      ) : (
+  const empty = (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyEmoji}>🎯</Text>
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+        No scores yet — be the first!
+      </Text>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View testID="leaderboard-column" style={styles.column}>
         <FlatList
+          testID="leaderboard-list"
+          ListHeaderComponent={header}
+          ListEmptyComponent={empty}
+          showsVerticalScrollIndicator={false}
           data={scores}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
@@ -126,26 +146,57 @@ export function LeaderboardScreen({ navigation, route }: LeaderboardScreenProps)
                 { backgroundColor: colors.surface, borderColor: operationColors[item.operation] },
               ]}
             >
-              <Text style={styles.rank}>{MEDALS[index] ?? `${index + 1}.`}</Text>
+              <Text
+                style={[
+                  styles.rank,
+                  {
+                    color: colors.textPrimary,
+                    fontSize: scaled(20, scale),
+                    width: scaled(36, scale),
+                  },
+                ]}
+              >
+                {MEDALS[index] ?? `${index + 1}.`}
+              </Text>
               <View style={styles.nameBlock}>
-                <Text style={[styles.name, { color: colors.textPrimary }]}>{item.name}</Text>
-                <Text style={[styles.detail, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.name, { color: colors.textPrimary, fontSize: scaled(16, scale) }]}
+                >
+                  {item.name}
+                </Text>
+                <Text
+                  style={[
+                    styles.detail,
+                    { color: colors.textSecondary, fontSize: scaled(12, scale) },
+                  ]}
+                >
                   {operationInfo(item.operation).symbol}
                   {item.difficulty ? ` · ${LEVEL_LABELS[item.difficulty]}` : ''}
                 </Text>
               </View>
-              <Text style={[styles.score, { color: operationColors[item.operation] }]}>
+              <Text
+                style={[
+                  styles.score,
+                  { color: operationColors[item.operation], fontSize: scaled(18, scale) },
+                ]}
+              >
                 {item.score}
               </Text>
             </View>
           )}
         />
-      )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  column: {
+    flex: 1,
+    width: '100%',
+    maxWidth: READABLE_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -158,12 +209,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 26,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-  },
-  homeIcon: {
-    fontSize: 28,
   },
   filterRow: {
     flexDirection: 'row',
@@ -181,7 +228,6 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    fontSize: 19,
   },
   levelRow: {
     flexDirection: 'row',
@@ -192,7 +238,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   levelLabel: {
-    fontSize: 14,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
   },
@@ -200,9 +245,8 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.extraBold,
   },
   emptyState: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 48,
   },
   emptyEmoji: {
     fontSize: 48,
@@ -224,25 +268,20 @@ const styles = StyleSheet.create({
   },
   // Medals are emoji; ranks 4 and up are digits, which need the app font to match the row.
   rank: {
-    width: 36,
-    fontSize: 20,
     fontFamily: fontFamily.bold,
   },
   nameBlock: {
     flex: 1,
   },
   detail: {
-    fontSize: 12,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
   },
   name: {
-    fontSize: 16,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },
   score: {
-    fontSize: 18,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
   },

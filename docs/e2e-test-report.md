@@ -193,3 +193,24 @@ The simulator shows "Sign in to Apple Account" prompts at launch because it has 
 are cancelled and do not occur on a real device or in the App Store build. Both are also listed in
 [ios-manual-test-checklist.md](ios-manual-test-checklist.md).
 
+
+## Phase 2 device pass (adaptive layout, branch `adaptive-layout`)
+
+The new layout code (see [architecture.md](architecture.md)) was run on an iPad Pro 13" and an iPhone 16 Pro
+(iOS simulator, portrait and landscape) and on a Pixel 3a phone and a Pixel Tablet (Android emulator,
+portrait and landscape). Home, Game, Leaderboard and Settings were each opened on every device. The iOS
+simulator ignores taps under Xcode 27 (AXe reports success but does nothing), so screens were opened with a temporary
+local-only navigation hook that is not part of the commit; Android used adb taps.
+
+| # | Bug found | Where | Root cause | Fix (tests first) |
+| --- | --- | --- | --- | --- |
+| 1 | The fourth Home tile wrapped to a second row | iPhone landscape | Tile size was computed from the window width, but the notch takes about 59 dp on each side | `useLayout` now subtracts the safe-area insets (`safeWidth`, `safeHeight`) |
+| 2 | The top-score card and the last Settings row were hidden behind the tab bar | Phones turned sideways | The content was a plain `View`, so nothing could scroll | Home and Settings content is now in a `ScrollView` |
+| 3 | Answers touched the Pause button; the bottom row was cramped | Android phone landscape | Timer, score and controls stacked and left under 200 dp for the board | On a short window they share one row |
+| 4 | Only about one leaderboard row was visible | Phones turned sideways | Title and filters sat above the list and took most of the height | Title and filters are the list header, so they scroll away |
+| 5 | Ranks 4 and up were nearly invisible on the dark theme | Every device | The rank `Text` had no color and fell back to black (found on iPhone) | Uses `colors.textPrimary` |
+| 6 | Leaderboard, Settings and the top-score card looked tiny next to the larger tiles | Tablets | Only the Home tiles and Game board were scaled | Their type and touch heights use `scaled()` |
+| 7 | "Multiplication" wrapped to two lines | Android phone landscape | A 113 dp tile was too small for the label | Tile height budget fixed, minimum 140 dp, label is one line and shrinks to fit, banner capped on short windows |
+
+Everything above was re-checked after the fixes on the same devices. Not covered: the name-entry and
+Get Ready modals in landscape on phones, and a real device (the simulators and emulators only).

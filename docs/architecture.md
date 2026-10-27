@@ -15,12 +15,13 @@ table and fails the build on any import cycle.
 | `types` | Shared types and the lists they come from (`DIFFICULTIES`, `THEMES`) | — |
 | `utils` | `randomInt`, `shuffle`, `createId` | — |
 | `audio` | Sound pool and mute switch | — |
+| `layout` | Window size classes, scale factor, tile sizing (`useLayout`, `useLayoutClass`) | — |
 | `theme` | Color tokens, fonts, shadows | `types` |
 | `game` | Pure game logic: generators, scoring, timer, engine, operation list | `types`, `utils` |
 | `storage` | Persistent score list | `types`, `game` |
 | `purchases` | Entitlements, parental gate, store integration | `types` |
 | `settings` | Persisted settings and theme resolution | `types`, `theme`, `audio` |
-| `components` | Reusable UI pieces | all layers below the screens |
+| `components` | Reusable UI pieces | all layers below the screens, including `layout` |
 | `screens` | Home, Game, Leaderboard, Settings | everything below |
 | `navigation` | Route types and the navigator | `types`, `screens`, `settings` |
 
@@ -34,9 +35,17 @@ table and fails the build on any import cycle.
 
 Why it is shaped this way:
 
+- **One place decides the layout class.** `layout/layout.ts` reads the window size with
+  `useWindowDimensions` (so rotation, iPad Split View and Android multi-window just
+  work) and returns a class: compact under 600 dp, medium 600 to 839, expanded 840 and
+  up, the same breakpoints Android uses. It also returns `scale` (1 on phones, 1.4 on
+  tablet-sized windows), `isLandscape`, `isShort` (a phone turned sideways: wide but
+  not scaled up) and `contentWidth` (capped at 640 for readable columns), and `safeWidth` / `safeHeight` (the window minus the notch and home indicator, read from the safe-area context). Components
+  multiply their phone-scale sizes by `scale` and never look at the device model.
+
 - **`game` is pure.** It has no knowledge of audio, storage, React Native views or
   settings, so it is fast to test and could be reused by another front end.
-- **`types`, `utils` and `audio` are leaves.** Nothing they depend on changes when
+- **`types`, `utils`, `audio` and `layout` are leaves.** Nothing they depend on changes when
   the UI changes (Stable Dependencies Principle).
 - **No cycles.** The graph is a directed acyclic graph (Acyclic Dependencies
   Principle).

@@ -5,6 +5,7 @@ import { AnimatedPressable } from './AnimatedPressable';
 import { useSettings } from '../settings/SettingsContext';
 import { cardShadow } from '../theme/shadow';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
+import { scaled, useLayout } from '../layout/layout';
 import type { Operation } from '../types/game';
 
 type RoundSummaryProps = {
@@ -24,13 +25,20 @@ export function RoundSummary({
   onViewLeaderboard,
 }: RoundSummaryProps) {
   const { colors } = useSettings();
+  const { scale } = useLayout();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
-        <Text style={styles.emoji}>🎉</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Nice work, {name}!</Text>
-        <Text style={[styles.score, { color: operationColors[operation] }]}>{score} {Math.abs(score) === 1 ? 'point' : 'points'}</Text>
+        <Text style={[styles.emoji, { fontSize: scaled(56, scale) }]}>🎉</Text>
+        <Text style={[styles.title, { color: colors.textPrimary, fontSize: scaled(24, scale) }]}>
+          Nice work, {name}!
+        </Text>
+        <Text
+          style={[styles.score, { color: operationColors[operation], fontSize: scaled(40, scale) }]}
+        >
+          {score} {Math.abs(score) === 1 ? 'point' : 'points'}
+        </Text>
         <AnimatedPressable
           testID="play-again-button"
           accessibilityRole="button"
@@ -59,20 +67,17 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   emoji: {
-    fontSize: 56,
     marginBottom: 8,
   },
   // alignItems centers each Text's box, but a name long enough to wrap makes the box
   // full-width and its lines default to left-aligned, so centering must be explicit.
   title: {
-    fontSize: 24,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     textAlign: 'center',
     marginBottom: 8,
   },
   score: {
-    fontSize: 40,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     textAlign: 'center',

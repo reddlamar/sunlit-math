@@ -16,10 +16,21 @@ const ALLOWED_LAYER_IMPORTS: Record<string, string[]> = {
   theme: ['types'],
   game: ['types', 'utils'],
   audio: [],
+  layout: [],
   storage: ['types', 'game'],
   settings: ['types', 'theme', 'audio'],
   purchases: ['types'],
-  components: ['types', 'theme', 'game', 'audio', 'settings', 'purchases', 'storage', 'utils'],
+  components: [
+    'types',
+    'theme',
+    'game',
+    'audio',
+    'settings',
+    'purchases',
+    'storage',
+    'utils',
+    'layout',
+  ],
   navigation: ['types', 'screens', 'settings'],
   screens: [
     'types',
@@ -31,6 +42,7 @@ const ALLOWED_LAYER_IMPORTS: Record<string, string[]> = {
     'storage',
     'components',
     'navigation',
+    'layout',
   ],
 };
 

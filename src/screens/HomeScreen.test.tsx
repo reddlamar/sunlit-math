@@ -1,14 +1,15 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 import { HomeScreen } from './HomeScreen';
 import { PurchaseProvider } from '../purchases/PurchaseContext';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { addScore } from '../storage/scoresRepository';
 import { passParentalGate } from '../testUtils/parentalGate';
+import { PHONE, PHONE_LANDSCAPE, IPAD_PORTRAIT, setWindow } from '../testUtils/window';
 import type { GameScreenProps, HomeScreenProps, RootStackParamList } from '../navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -118,5 +119,60 @@ describe('HomeScreen top score', () => {
     await fireEvent.press(await findByText('finish game'));
 
     expect(await findByText('Ada · 12')).toBeTruthy();
+  });
+});
+
+describe('HomeScreen layout', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('lays the tiles out in a readable column on an iPad in portrait', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { getByTestId } = await renderHomeScreen();
+    expect(getByTestId('operation-grid')).toHaveStyle({ maxWidth: 640 });
+  });
+
+  it('lets the four tiles share one row when the window is wide', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId, getByText } = await renderHomeScreen();
+    expect(StyleSheet.flatten(getByTestId('operation-grid').props.style).maxWidth).toBeUndefined();
+    expect(getByText('÷')).toBeTruthy();
+  });
+});
+
+describe('HomeScreen on a short window', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('scrolls, so the top score is never hidden behind the tab bar', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await renderHomeScreen();
+    const scroll = getByTestId('home-scroll');
+    expect(within(scroll).getByTestId('operation-grid')).toBeTruthy();
+    expect(within(scroll).getByLabelText('View top score on the leaderboard')).toBeTruthy();
+  });
+});
+
+describe('HomeScreen top-score card on an iPad', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('grows its text with the layout, so it matches the larger tiles', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { findByText } = await renderHomeScreen();
+    expect(await findByText(/Top Score|No scores yet/)).toHaveStyle({ fontSize: 18.2 });
+  });
+});
+
+describe('HomeScreen header on a short window', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('shrinks the banner so the tiles keep their room', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await renderHomeScreen();
+    expect(getByTestId('header-banner')).toHaveStyle({ maxWidth: 392 });
+  });
+
+  it('lets the banner fill the header otherwise', async () => {
+    setWindow(PHONE);
+    const { getByTestId } = await renderHomeScreen();
+    expect(StyleSheet.flatten(getByTestId('header-banner').props.style).maxWidth).toBeUndefined();
   });
 });
