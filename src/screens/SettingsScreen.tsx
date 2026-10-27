@@ -5,11 +5,12 @@ import { AnimatedPressable } from '../components/AnimatedPressable';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { SettingCard } from '../components/SettingCard';
 import { UnlockModal } from '../components/UnlockModal';
+import { DIFFICULTY_LABELS } from '../game/difficulties';
 import { usePurchase } from '../purchases/PurchaseContext';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
 import { READABLE_MAX_WIDTH } from '../layout/layout';
-import type { Difficulty, Theme } from '../types/game';
+import { DIFFICULTIES, type Theme } from '../types/game';
 
 type ThemeChoice = Theme | 'auto';
 
@@ -19,11 +20,10 @@ const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
-];
+const DIFFICULTY_OPTIONS = DIFFICULTIES.map((value) => ({
+  value,
+  label: DIFFICULTY_LABELS[value],
+}));
 
 const MUTE_OPTIONS: { value: 'on' | 'off'; label: string }[] = [
   { value: 'on', label: 'On' },
@@ -87,7 +87,9 @@ export function SettingsScreen() {
                 <Text style={[styles.unlockText, { color: colors.textSecondary }]}>
                   For grown-ups. A parent check comes first.
                 </Text>
-                <Text style={[styles.unlockText, { color: colors.accent }]}>Restore purchases</Text>
+                <Text style={[styles.unlockText, { color: colors.accentText }]}>
+                  Restore purchases
+                </Text>
               </SettingCard>
             </AnimatedPressable>
           )}

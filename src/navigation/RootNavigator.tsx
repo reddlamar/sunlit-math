@@ -48,7 +48,7 @@ function MainTabs() {
         tabBarVariant: isRail ? 'material' : 'uikit',
         // The rail stacks each label under its icon; without this a sidebar spreads them out.
         tabBarLabelPosition: isRail ? 'below-icon' : undefined,
-        tabBarActiveTintColor: colors.accent,
+        tabBarActiveTintColor: colors.accentText,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: styles.tabLabel,
         // The bottom bar floats as a rounded card; the rail is a full-height column.

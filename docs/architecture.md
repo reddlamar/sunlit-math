@@ -15,7 +15,7 @@ table and fails the build on any import cycle.
 | `types` | Shared types and the lists they come from (`DIFFICULTIES`, `THEMES`) | — |
 | `utils` | `randomInt`, `shuffle`, `createId` | — |
 | `audio` | Sound pool and mute switch | — |
-| `layout` | Window size classes, scale factor, how Home arranges itself (`useLayout`, `useLayoutClass`, `homeArrangement`) | — |
+| `layout` | Window size classes and how Home, Game and the other screens arrange themselves (`useLayout`, `frameSize`, `homeArrangement`, `gameArrangement`) | — |
 | `theme` | Color tokens, fonts, shadows | `types` |
 | `game` | Pure game logic: generators, scoring, timer, engine, operation list | `types`, `utils` |
 | `storage` | Persistent score list | `types`, `game` |
@@ -38,10 +38,11 @@ Why it is shaped this way:
 - **One place decides the layout class.** `layout/layout.ts` reads the window size with
   `useWindowDimensions` (so rotation, iPad Split View and Android multi-window just
   work) and returns a class: compact under 600 dp, medium 600 to 839, expanded 840 and
-  up, the same breakpoints Android uses. It also returns `scale` (1 on phones, 1.4 on
-  tablet-sized windows), `isLandscape`, `isShort` (a phone turned sideways: wide but
-  not scaled up) and `contentWidth` (capped at 640 for readable columns), and `safeWidth` / `safeHeight` (the window minus the notch and home indicator, read from the safe-area context). Components
-  multiply their phone-scale sizes by `scale` and never look at the device model.
+  up, the same breakpoints Android uses. It also returns `isLandscape` and `isShort` (a
+  phone turned sideways: wide, but under 480 dp tall). From those it derives, in this one
+  file, how each screen is arranged (`homeArrangement`, `gameArrangement`) and which of the
+  design's three frame sizes to draw at (`frameSize`: compact, medium or wide). Components
+  pick their sizes from a small table keyed by `frameSize` and never look at the device model.
 
 - **`game` is pure.** It has no knowledge of audio, storage, React Native views or
   settings, so it is fast to test and could be reused by another front end.

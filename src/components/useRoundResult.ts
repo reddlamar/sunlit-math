@@ -126,6 +126,8 @@ export function useRoundResult({
         }
       } catch {
         if (!isCancelled) {
+          // Show the result anyway, with the failure on it, even if nothing was looked up.
+          setPreviousBest((known) => (known === undefined ? null : known));
           setStatus('failed');
         }
       }

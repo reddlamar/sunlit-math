@@ -1,13 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
+import { DIFFICULTY_LABELS } from '../game/difficulties';
 import { OPERATIONS } from '../game/operations';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, staticColors, touchTarget } from '../theme/tokens';
 import { DIFFICULTIES, type Difficulty, type Operation } from '../types/game';
 
 const RING = 4;
-const LEVEL_LABELS: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 
 type LeaderboardFiltersProps = {
   operation: Operation | undefined;
@@ -38,7 +38,7 @@ export function LeaderboardFilters({
   ];
   const levelChips: { value: Difficulty | undefined; label: string }[] = [
     { value: undefined, label: 'All levels' },
-    ...DIFFICULTIES.map((level) => ({ value: level, label: LEVEL_LABELS[level] })),
+    ...DIFFICULTIES.map((level) => ({ value: level, label: DIFFICULTY_LABELS[level] })),
   ];
 
   const caption = (text: string) =>

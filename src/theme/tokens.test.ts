@@ -29,6 +29,7 @@ const TOKEN_KEYS: (keyof ColorTokens)[] = [
   'success',
   'error',
   'accent',
+  'accentText',
   'border',
   'timer',
   'streak',
@@ -103,6 +104,14 @@ describe('theme tokens', () => {
     ['dark', dark],
   ])('keeps error text readable (WCAG AA, 4.5:1) on the %s modal surface', (_name, tokens) => {
     expect(contrastRatio(tokens.danger, tokens.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('keeps the accent readable as small text (4.5:1) on the %s page and card', (_name, tokens) => {
+    expect(contrastRatio(tokens.accentText, tokens.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(tokens.accentText, tokens.surface)).toBeGreaterThanOrEqual(4.5);
   });
 
   // The revealed answers show a 32 px extra-bold number on these fills: large text, 3:1.

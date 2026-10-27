@@ -81,7 +81,7 @@ export function UnlockModal({ visible, onClose }: UnlockModalProps) {
             disabled={isPurchasing}
             onPress={restore}
           >
-            <Text style={[modalStyles.subtleLabel, styles.secondaryLabel, { color: colors.accent }]}>Restore Purchase</Text>
+            <Text style={[modalStyles.subtleLabel, styles.secondaryLabel, { color: colors.accentText }]}>Restore Purchase</Text>
           </AnimatedPressable>
           <AnimatedPressable
             testID="unlock-close-button"
