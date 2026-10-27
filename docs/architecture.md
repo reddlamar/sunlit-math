@@ -21,7 +21,7 @@ table and fails the build on any import cycle.
 | `storage` | Persistent score list | `types`, `game` |
 | `purchases` | Entitlements, parental gate, store integration | `types` |
 | `settings` | Persisted settings and theme resolution | `types`, `theme`, `audio` |
-| `components` | Reusable UI pieces | all layers below the screens, including `layout` |
+| `components` | Reusable UI pieces, including the SVG icon set (`components/icons`, one `Icon` component drawing named paths in any color) | all layers below the screens, including `layout` |
 | `screens` | Home, Game, Leaderboard, Settings | everything below |
 | `navigation` | Route types and the navigator | `types`, `screens`, `settings` |
 

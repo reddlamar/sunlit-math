@@ -2,9 +2,16 @@ import type { Operation } from '../types/game';
 
 export const fontFamily = {
   regular: 'Baloo2_500Medium',
+  semiBold: 'Baloo2_600SemiBold',
   bold: 'Baloo2_700Bold',
   extraBold: 'Baloo2_800ExtraBold',
 };
+
+/** Corner radii shared by cards, tiles and answer buttons. */
+export const radius = {
+  lg: 22,
+  xl: 32,
+} as const;
 
 // Every button fill below carries white text, so each one keeps at least 3:1 contrast
 // against white (the WCAG minimum for large text). Small white labels on these fills are

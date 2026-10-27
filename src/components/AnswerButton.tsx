@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
-import { fontFamily, staticColors, choiceColors } from '../theme/tokens';
+import { fontFamily, staticColors, choiceColors, radius } from '../theme/tokens';
 import { scaled, useLayout } from '../layout/layout';
 
 type AnswerButtonProps = {
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   button: {
-    borderRadius: 22,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
