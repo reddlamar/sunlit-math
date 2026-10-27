@@ -1,15 +1,24 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
 import { LeaderboardScreen } from './LeaderboardScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
 import * as scoresRepository from '../storage/scoresRepository';
-import { fontFamily } from '../theme/tokens';
+import { fontFamily, light } from '../theme/tokens';
 import { hasStyleValue } from '../testUtils/styleAssertions';
+import {
+  PHONE,
+  PHONE_LANDSCAPE,
+  IPAD_LANDSCAPE,
+  IPAD_PORTRAIT,
+  setWindow,
+} from '../testUtils/window';
 import type { LeaderboardScreenProps } from '../navigation/types';
 
 jest.mock('../storage/scoresRepository');
 
-function makeRoute(operation?: LeaderboardScreenProps['route']['params']['operation']): LeaderboardScreenProps['route'] {
+function makeRoute(
+  operation?: LeaderboardScreenProps['route']['params']['operation']
+): LeaderboardScreenProps['route'] {
   return { key: 'Leaderboard', name: 'Leaderboard', params: { operation } };
 }
 
@@ -135,5 +144,71 @@ describe('LeaderboardScreen', () => {
 
     const rank = await findByText('4.');
     expect(hasStyleValue(rank.props.style, 'fontFamily', fontFamily.bold)).toBe(true);
+  });
+});
+
+describe('LeaderboardScreen layout', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it.each([
+    ['a phone', PHONE],
+    ['an iPad in landscape', IPAD_LANDSCAPE],
+  ])('keeps the list in a readable centered column on %s', async (_name, window) => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
+    setWindow(window);
+    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
+    expect(getByTestId('leaderboard-column')).toHaveStyle({ maxWidth: 640, alignSelf: 'center' });
+  });
+});
+
+describe('LeaderboardScreen readability', () => {
+  afterEach(() => setWindow(PHONE));
+
+  const fourScores = [1, 2, 3, 4].map((n) => ({
+    id: String(n),
+    name: `Player ${n}`,
+    score: 50 - n,
+    operation: 'addition' as const,
+    createdAt: n,
+  }));
+
+  it('draws ranks 4 and up in the theme text color so they stay visible in dark mode', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(fourScores);
+    const { findByText } = await renderLeaderboard(makeNavigation(), makeRoute());
+    expect(await findByText('4.')).toHaveStyle({ color: light.textPrimary });
+  });
+
+  it('grows the title, names and scores on an iPad', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue(fourScores);
+    setWindow(IPAD_PORTRAIT);
+    const { findByText, getByText } = await renderLeaderboard(makeNavigation(), makeRoute());
+    expect(await findByText('Player 1')).toHaveStyle({ fontSize: 22.4 });
+    expect(getByText('49')).toHaveStyle({ fontSize: 25.2 });
+    expect(getByText(/Leaderboard/)).toHaveStyle({ fontSize: 36.4 });
+    expect(getByText('Hard')).toHaveStyle({ fontSize: 19.6 });
+  });
+});
+
+describe('LeaderboardScreen on a short window', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('scrolls the title and filters with the list, so the rows get the whole screen', async () => {
+    jest
+      .mocked(scoresRepository.getTopScores)
+      .mockResolvedValue([
+        { id: '1', name: 'Ada', score: 20, operation: 'addition', createdAt: 1 },
+      ]);
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
+    const list = within(getByTestId('leaderboard-list'));
+    expect(list.getByText(/Leaderboard/)).toBeTruthy();
+    expect(list.getByText('All levels')).toBeTruthy();
+    expect(await list.findByText('Ada')).toBeTruthy();
+  });
+
+  it('keeps the empty message inside the list too', async () => {
+    jest.mocked(scoresRepository.getTopScores).mockResolvedValue([]);
+    const { getByTestId } = await renderLeaderboard(makeNavigation(), makeRoute());
+    expect(await within(getByTestId('leaderboard-list')).findByText(/No scores yet/)).toBeTruthy();
   });
 });

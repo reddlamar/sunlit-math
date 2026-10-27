@@ -3,7 +3,7 @@
     "name": "Sunlit Math",
     "slug": "sunlit-math",
     "version": "1.2.2",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {

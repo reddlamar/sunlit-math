@@ -3,6 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
 import { fontFamily, staticColors, choiceColors } from '../theme/tokens';
+import { scaled, useLayout } from '../layout/layout';
 
 type AnswerButtonProps = {
   value: number;
@@ -17,6 +18,7 @@ export const AnswerButton = memo(function AnswerButton({
   disabled,
   color = choiceColors[0],
 }: AnswerButtonProps) {
+  const { scale, isShort } = useLayout();
   return (
     <AnimatedPressable
       accessibilityRole="button"
@@ -24,9 +26,14 @@ export const AnswerButton = memo(function AnswerButton({
       disabled={disabled}
       onPress={() => onPress(value)}
       wrapperStyle={styles.wrapper}
-      style={[styles.button, { backgroundColor: color }, disabled && styles.disabled]}
+      style={[
+        styles.button,
+        // A phone turned sideways has little height, so the board stays compact there.
+        { backgroundColor: color, minHeight: isShort ? 72 : scaled(96, scale) },
+        disabled && styles.disabled,
+      ]}
     >
-      <Text testID="answer-choice" style={styles.label}>
+      <Text testID="answer-choice" style={[styles.label, { fontSize: scaled(32, scale) }]}>
         {value}
       </Text>
     </AnimatedPressable>
@@ -41,7 +48,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   button: {
-    minHeight: 96,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -52,7 +58,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   label: {
-    fontSize: 32,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     color: staticColors.onColor,

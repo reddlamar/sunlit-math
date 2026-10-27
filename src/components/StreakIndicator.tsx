@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
 import { playStreakSound } from '../audio/sounds';
+import { scaled, useLayout } from '../layout/layout';
 
 const LIT_THRESHOLD = 3;
 const MILESTONE_INTERVAL = 3;
@@ -13,6 +14,7 @@ type StreakIndicatorProps = {
 
 export function StreakIndicator({ streak }: StreakIndicatorProps) {
   const { colors } = useSettings();
+  const { scale } = useLayout();
   const isLit = streak >= LIT_THRESHOLD;
   const [pop] = useState(() => new Animated.Value(1));
   const previousStreak = useRef(streak);
@@ -29,8 +31,18 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
     playStreakSound();
     pop.setValue(1);
     Animated.sequence([
-      Animated.spring(pop, { toValue: 1.6, friction: 3, tension: 200, useNativeDriver: true }),
-      Animated.spring(pop, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }),
+      Animated.spring(pop, {
+        toValue: 1.6,
+        friction: 3,
+        tension: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(pop, {
+        toValue: 1,
+        friction: 4,
+        tension: 160,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [streak, pop]);
 
@@ -42,11 +54,26 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
       <Animated.Text
         testID="streak-flame"
         accessibilityState={{ selected: isLit }}
-        style={[styles.flame, isLit && styles.flameLit, { transform: [{ scale: pop }] }]}
+        style={[
+          styles.flame,
+          isLit && styles.flameLit,
+          {
+            fontSize: scaled(isLit ? 26 : 20, scale),
+            transform: [{ scale: pop }],
+          },
+        ]}
       >
         🔥
       </Animated.Text>
-      <Text style={[styles.count, { color: isLit ? colors.streak : colors.textPrimary }]}>
+      <Text
+        style={[
+          styles.count,
+          {
+            color: isLit ? colors.streak : colors.textPrimary,
+            fontSize: scaled(18, scale),
+          },
+        ]}
+      >
         {streak}
       </Text>
     </View>
@@ -62,16 +89,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   flame: {
-    fontSize: 20,
     opacity: 0.3,
   },
   flameLit: {
-    fontSize: 26,
     opacity: 1,
   },
   count: {
     marginLeft: 6,
-    fontSize: 18,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

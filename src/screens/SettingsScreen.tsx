@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
+import { READABLE_MAX_WIDTH, scaled, useLayout } from '../layout/layout';
 import type { Difficulty, Theme } from '../types/game';
 
 const THEME_OPTIONS: { value: Theme; label: string }[] = [
@@ -24,46 +25,57 @@ const MUTE_OPTIONS: { value: 'on' | 'off'; label: string }[] = [
 
 export function SettingsScreen() {
   const { muted, theme, difficulty, colors, setMuted, setTheme, setDifficulty } = useSettings();
+  const { scale } = useLayout();
+  const labelStyle = [
+    styles.sectionLabel,
+    { color: colors.textSecondary, fontSize: scaled(13, scale) },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>⚙️ Settings</Text>
+      <ScrollView testID="settings-scroll" contentContainerStyle={styles.scrollContent}>
+        <View testID="settings-column" style={styles.column}>
+          <Text style={[styles.title, { color: colors.textPrimary, fontSize: scaled(26, scale) }]}>
+            ⚙️ Settings
+          </Text>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Sound</Text>
-        <SegmentedControl
-          options={MUTE_OPTIONS}
-          value={muted ? 'off' : 'on'}
-          onChange={(value) => setMuted(value === 'off')}
-          accessibilityLabel="Sound"
-          color={colors.accent}
-          testID="mute"
-        />
-      </View>
+          <View style={styles.section}>
+            <Text style={labelStyle}>Sound</Text>
+            <SegmentedControl
+              options={MUTE_OPTIONS}
+              value={muted ? 'off' : 'on'}
+              onChange={(value) => setMuted(value === 'off')}
+              accessibilityLabel="Sound"
+              color={colors.accent}
+              testID="mute"
+            />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Theme</Text>
-        <SegmentedControl
-          options={THEME_OPTIONS}
-          value={theme}
-          onChange={setTheme}
-          accessibilityLabel="Theme"
-          color={colors.accent}
-          testID="theme"
-        />
-      </View>
+          <View style={styles.section}>
+            <Text style={labelStyle}>Theme</Text>
+            <SegmentedControl
+              options={THEME_OPTIONS}
+              value={theme}
+              onChange={setTheme}
+              accessibilityLabel="Theme"
+              color={colors.accent}
+              testID="theme"
+            />
+          </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Difficulty</Text>
-        <SegmentedControl
-          options={DIFFICULTY_OPTIONS}
-          value={difficulty}
-          onChange={setDifficulty}
-          accessibilityLabel="Difficulty"
-          color={colors.accent}
-          testID="difficulty"
-        />
-      </View>
+          <View style={styles.section}>
+            <Text style={labelStyle}>Difficulty</Text>
+            <SegmentedControl
+              options={DIFFICULTY_OPTIONS}
+              value={difficulty}
+              onChange={setDifficulty}
+              accessibilityLabel="Difficulty"
+              color={colors.accent}
+              testID="difficulty"
+            />
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -74,8 +86,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
   },
+  scrollContent: {
+    paddingBottom: 24,
+  },
+  column: {
+    width: '100%',
+    maxWidth: READABLE_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   title: {
-    fontSize: 26,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     marginBottom: 24,
@@ -84,7 +103,6 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionLabel: {
-    fontSize: 13,
     fontWeight: '600',
     fontFamily: fontFamily.regular,
     textTransform: 'uppercase',

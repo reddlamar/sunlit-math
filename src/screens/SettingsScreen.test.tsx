@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, within } from '@testing-library/react-native';
 import { SettingsScreen } from './SettingsScreen';
 import { SettingsProvider } from '../settings/SettingsContext';
+import { PHONE, PHONE_LANDSCAPE, IPAD_PORTRAIT, setWindow } from '../testUtils/window';
 
 function renderSettingsScreen() {
   return render(
@@ -52,5 +53,38 @@ describe('SettingsScreen', () => {
     await waitFor(() =>
       expect(getByTestId('difficulty-hard').props.accessibilityState).toEqual({ selected: true })
     );
+  });
+});
+
+describe('SettingsScreen layout', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('uses the whole width on a phone', async () => {
+    setWindow(PHONE);
+    const { getByTestId } = await renderSettingsScreen();
+    expect(getByTestId('settings-column')).toHaveStyle({ width: '100%', maxWidth: 640 });
+  });
+
+  it('keeps a readable centered column on an iPad', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { getByTestId } = await renderSettingsScreen();
+    expect(getByTestId('settings-column')).toHaveStyle({ maxWidth: 640, alignSelf: 'center' });
+  });
+});
+
+describe('SettingsScreen scrolling and scale', () => {
+  afterEach(() => setWindow(PHONE));
+
+  it('scrolls, so the last setting is reachable on a short window', async () => {
+    setWindow(PHONE_LANDSCAPE);
+    const { getByTestId } = await renderSettingsScreen();
+    expect(within(getByTestId('settings-scroll')).getByTestId('difficulty-hard')).toBeTruthy();
+  });
+
+  it('grows the title and section labels on an iPad', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { getByText } = await renderSettingsScreen();
+    expect(getByText(/Settings/)).toHaveStyle({ fontSize: 36.4 });
+    expect(getByText('Sound')).toHaveStyle({ fontSize: 18.2 });
   });
 });
