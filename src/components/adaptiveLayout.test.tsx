@@ -53,7 +53,9 @@ describe('components adapt to the window', () => {
     ])('sizes the answer on %s', async (_name, window, height, fontSize) => {
       setWindow(window);
       const { getByRole, getByTestId } = await render(
-        <AnswerButton value={12} onPress={jest.fn()} />
+        <SettingsProvider>
+          <AnswerButton value={12} onPress={jest.fn()} />
+        </SettingsProvider>
       );
       expect(getByRole('button')).toHaveStyle({ height });
       expect(getByTestId('answer-choice')).toHaveStyle({ fontSize });
@@ -67,7 +69,14 @@ describe('components adapt to the window', () => {
     ])('spaces the answers on %s', async (_name, window, gap) => {
       setWindow(window);
       const { getByTestId } = await render(
-        <AnswerGrid choices={[1, 2, 3, 4]} disabled={false} onAnswer={jest.fn()} shakeStyle={{}} />
+        <SettingsProvider>
+          <AnswerGrid
+            choices={[1, 2, 3, 4]}
+            disabled={false}
+            onAnswer={jest.fn()}
+            shakeStyle={{}}
+          />
+        </SettingsProvider>
       );
       expect(getByTestId('answer-grid')).toHaveStyle({ gap });
     });

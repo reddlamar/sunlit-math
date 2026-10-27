@@ -68,6 +68,8 @@ export const iconPaths = {
     line('M20 4V9H15'),
   ],
   back: [line('M15 5L8 12L15 19')],
+  check: [line('M5 12.5L10 17.5L19 7')],
+  cross: [line('M6 6L18 18'), line('M18 6L6 18')],
 } satisfies Record<string, IconPath[]>;
 
 export type IconName = keyof typeof iconPaths;

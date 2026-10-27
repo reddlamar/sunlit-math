@@ -57,6 +57,8 @@ export type ColorTokens = {
   streakSoft: string;
   /** Validation errors: an empty name, a wrong parental-gate answer, a failed purchase. */
   danger: string;
+  /** Text and icons drawn on a success or error fill, such as a revealed answer. */
+  onStatus: string;
 };
 
 export const light: ColorTokens = {
@@ -74,6 +76,7 @@ export const light: ColorTokens = {
   streak: '#D66800',
   streakSoft: '#FFF1E6',
   danger: '#D92D20',
+  onStatus: '#FFFFFF',
 };
 
 // Cozy bedtime palette, not a muted dev-tool dark mode — warm plum background,
@@ -92,4 +95,6 @@ export const dark: ColorTokens = {
   streakSoft: '#4A2E1F',
   // Lighter than light's red: #D92D20 is only 2.95:1 on the dark modal surface.
   danger: '#FF8A7A',
+  // The dark theme's success and error fills are bright, so white on them would be unreadable.
+  onStatus: '#1F1440',
 };
