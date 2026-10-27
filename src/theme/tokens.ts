@@ -51,6 +51,8 @@ export type ColorTokens = {
   success: string;
   error: string;
   accent: string;
+  /** The accent as small text or an icon on a card or the page: it has to read at 4.5:1. */
+  accentText: string;
   border: string;
   timer: string;
   streak: string;
@@ -69,6 +71,7 @@ export const light: ColorTokens = {
   success: '#2E9E5B',
   error: '#E4572E',
   accent: '#5B4FCF',
+  accentText: '#5B4FCF',
   border: '#E6E1D6',
   // Timer and streak are darker than the answer-button cyan and orange so their numbers
   // clear 3:1 on the cream page (tokens.test.ts checks both themes).
@@ -89,6 +92,8 @@ export const dark: ColorTokens = {
   success: '#5EE39B',
   error: '#FF7A59',
   accent: '#8B7CFF',
+  // Lighter than the dark accent fill, which is only 4.4:1 on the card as text.
+  accentText: '#9A8DFF',
   border: '#4A3B7A',
   timer: '#3FD4EC',
   streak: '#FFB870',

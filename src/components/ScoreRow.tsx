@@ -1,14 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { PlayerAvatar } from './avatars/PlayerAvatar';
+import { DIFFICULTY_LABELS } from '../game/difficulties';
 import { operationInfo } from '../game/operations';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, radius } from '../theme/tokens';
 import { formatPoints } from '../utils/format';
-import type { Difficulty, ScoreEntry } from '../types/game';
+import type { ScoreEntry } from '../types/game';
 
 const AVATAR_SIZE = 44;
-const LEVEL_LABELS: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 
 type ScoreRowProps = {
   /** Place on the board, starting at 1. */
@@ -20,7 +20,7 @@ type ScoreRowProps = {
 export function ScoreRow({ rank, entry }: ScoreRowProps) {
   const { colors } = useSettings();
   const { symbol, label } = operationInfo(entry.operation);
-  const level = entry.difficulty ? LEVEL_LABELS[entry.difficulty] : null;
+  const level = entry.difficulty ? DIFFICULTY_LABELS[entry.difficulty] : null;
 
   return (
     <View

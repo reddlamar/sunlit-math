@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useRoundResult } from './useRoundResult';
+import * as repository from '../storage/scoresRepository';
 import {
   addScore,
   getAllScores,
@@ -203,6 +204,17 @@ describe('useRoundResult', () => {
       await waitFor(() => expect(result.current.status).toBe('saved'));
 
       expect(await getAllScores()).toHaveLength(1);
+    });
+
+    it('still shows the result, with the failure, if something went wrong before the best was looked up', async () => {
+      jest.spyOn(repository, 'getLastPlayerName').mockRejectedValueOnce(new Error('disk'));
+      const { result } = await renderResult(roundOver());
+
+      await waitFor(() => expect(result.current.status).toBe('failed'));
+
+      // Not stuck on a blank screen: there is a result to show, and a way to try again.
+      expect(result.current.isReady).toBe(true);
+      expect(result.current.previousBest).toBeNull();
     });
 
     it('keeps the animal the player picked while it was failing', async () => {

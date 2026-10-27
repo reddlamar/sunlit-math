@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { AvatarPicker } from './AvatarPicker';
 import { SettingsProvider } from '../settings/SettingsContext';
@@ -72,5 +73,18 @@ describe('AvatarPicker', () => {
     const { getByTestId } = await renderPicker({ size: 56 });
 
     expect(getByTestId('avatar-option-fox')).toHaveStyle({ width: 56, height: 56 });
+  });
+
+  it('is as wide as the design at most, and shrinks to fit a narrower screen', async () => {
+    const { getByLabelText } = await renderPicker();
+
+    const style = StyleSheet.flatten(getByLabelText('Pick your player').props.style);
+    // Six 48 dp animals and five 12 dp gaps; 100% lets it be narrower than that.
+    expect(style.maxWidth).toBe(6 * 48 + 5 * 12);
+    expect(style.width).toBe('100%');
+    expect(style.justifyContent).toBe('space-between');
+    // Down to 8 dp apart before it would wrap, so an iPhone SE's 335 dp still holds all six.
+    expect(style.gap).toBe(8);
+    expect(6 * 48 + 5 * 8).toBeLessThanOrEqual(335);
   });
 });
