@@ -68,11 +68,12 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
 ### Decisions first
 
 1. **1.3.0 goes out first.** It is under review at App Store Connect now (build 10,
-   Phase 2 only). Only one version can be in review at a time, so **nothing for 1.4.0 is
-   deployed to App Store Connect until 1.3.0's status is Ready for Distribution.** Until
-   then everything else for 1.4.0 (code, device checks, the version bump, screenshots,
-   even the EAS build) can go ahead. If 1.3.0 is rejected, the fix goes in first and
-   1.4.0 waits behind it.
+   Phase 2 only). Only one version can be in review at a time, so **the 1.4.0 version
+   page is not created, and 1.4.0 is not submitted for review, until 1.3.0's status is
+   Ready for Distribution.** TestFlight is a separate track: a 1.4.0 build can be built,
+   uploaded and tested on your own devices while 1.3.0 is in review (as 1.3.0's build
+   was while 1.2.2 was). If 1.3.0 is rejected, its fix goes in first and 1.4.0 waits
+   behind it.
 2. **Merge #26** (dark appearance). It changes native config, so every build from then on, including the Release-configuration check, needs the rebuild.
 3. **Finding #2**, if the control border should be darker before release.
 
@@ -94,20 +95,22 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
    `git clone`, `npm ci`, then `eas build -p ios --profile production --non-interactive --no-wait`.
    The build number auto-increments (the next is 11). Confirm tests are green in the clone.
    If Android ships too: `eas build -p android --profile production`.
-6. **Gate: wait for 1.3.0 to be Ready for Distribution** in App Store Connect. It is
-   the only point where 1.4.0 has to stop; steps 1 to 5 do not depend on it. (I cannot
-   see App Store Connect's status from here, so tell me when it changes.)
-7. **Deploy to App Store Connect through Expo (EAS Submit)** once the gate is open:
-   `eas submit -p ios --latest` from the clean clone, which uploads the newest production
-   build (build 11 or later, version 1.4.0) using the project's App Store Connect app ID
+6. **Upload to TestFlight through Expo (EAS Submit)**, which does not need to wait for
+   1.3.0: `eas submit -p ios --latest` from the clean clone sends the newest production
+   build (1.4.0, build 11 or later) to App Store Connect using the project's app ID
    (`ascAppId` in `eas.json`). You run it, as for 1.2.2 and 1.3.0; I can instead submit
    that build through the Expo connector if you ask. Check first that the build it picks
-   is the 1.4.0 one and not an older build. It lands in TestFlight once Apple has
-   processed it; smoke-test that build on a real iPhone and iPad.
+   is the 1.4.0 one and not 1.3.0's. After Apple finishes processing it (a few minutes
+   to half an hour), it appears in TestFlight; install it on a real iPhone and iPad.
+   If the Auto theme, dark mode, the phone turned sideways or VoiceOver need checking,
+   this is where to do it. Fixes go into new builds (12, 13, ...), not a rebuilt 11.
+7. **Gate: wait for 1.3.0 to be Ready for Distribution** in App Store Connect. From here
+   on App Store Connect is involved, so this is the point where 1.4.0 has to stop. (I
+   cannot see its status from here, so tell me when it changes.)
 8. **App Store Connect (by hand):** create the 1.4.0 version (Apple generally lets you
-   create it once 1.3.0 is out of review), attach the new build, paste the release notes
-   (I will put them on your clipboard), upload the new screenshots, and confirm the
-   privacy answers. Nothing collected changed: no new SDK that gathers data
+   create it once 1.3.0 is out of review), attach the TestFlight-tested build, paste the
+   release notes (I will put them on your clipboard), upload the new screenshots, and
+   confirm the privacy answers. Nothing collected changed: no new SDK that gathers data
    (`react-native-svg` is drawing only), no accounts, no typed personal information any
    more. Re-check the Kids Category answers anyway. The parental gate is untouched.
 9. **Submit for review.**
