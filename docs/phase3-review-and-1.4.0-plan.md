@@ -67,11 +67,12 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
 
 ### Decisions first
 
-1. **Is 1.3.0 going out on its own?** Build 10 (1.3.0, Phase 2 only) exists and was
-   meant for TestFlight only, behind 1.2.2's review. Phase 3 is built on top of it. The
-   simplest path is to **skip a public 1.3.0 and ship 1.4.0 directly**, since 1.4.0
-   contains everything in it. Only one version can be in review at a time, so if 1.2.2 is
-   still in review, 1.4.0 waits for it. (I cannot see App Store Connect from here.)
+1. **1.3.0 goes out first.** It is under review at App Store Connect now (build 10,
+   Phase 2 only). Only one version can be in review at a time, so **nothing for 1.4.0 is
+   deployed to App Store Connect until 1.3.0's status is Ready for Distribution.** Until
+   then everything else for 1.4.0 (code, device checks, the version bump, screenshots,
+   even the EAS build) can go ahead. If 1.3.0 is rejected, the fix goes in first and
+   1.4.0 waits behind it.
 2. **Merge #26** (dark appearance). It changes native config, so every build from then on, including the Release-configuration check, needs the rebuild.
 3. **Finding #2**, if the control border should be darker before release.
 
@@ -82,7 +83,8 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
    (the iPhone 16 Pro check that caught problems before 1.2.2 and 1.3.0), plus an
    iPhone SE (375 dp) simulator and the Pixel emulators. Fix what they find in small PRs.
 3. **Bump the version**: `app.json` to `1.4.0` on a `release/1.4.0` branch, PR, merge
-   (the same pattern as 1.2.2 and 1.3.0).
+   (the same pattern as 1.2.2 and 1.3.0). This is safe to do while 1.3.0 is in review:
+   the version in review is a build that already exists.
 4. **Refresh the store screenshots.** The App Store and Play pages still show the old
    screens. The folders are `store-assets/screenshots` (iPhone 6.3", iPad 13") and
    `store-assets/app-store-creative`. Capture Home, Game, the result and the leaderboard
@@ -92,14 +94,23 @@ for Home, Game (a miss's reveal), the result screen, the Leaderboard and Setting
    `git clone`, `npm ci`, then `eas build -p ios --profile production --non-interactive --no-wait`.
    The build number auto-increments (the next is 11). Confirm tests are green in the clone.
    If Android ships too: `eas build -p android --profile production`.
-6. **You run** `eas submit -p ios --latest`. It lands in TestFlight; smoke-test that build
-   on a real iPhone and iPad.
-7. **App Store Connect (by hand):** create the 1.4.0 version, attach the new build, paste
-   the release notes (I will put them on your clipboard), upload the new screenshots,
-   and confirm the privacy answers. Nothing collected changed: no new SDK that gathers
-   data (`react-native-svg` is drawing only), no accounts, no typed personal information
-   any more. Re-check the Kids Category answers anyway. The parental gate is untouched.
-8. **Submit for review** once no other version is in review.
+6. **Gate: wait for 1.3.0 to be Ready for Distribution** in App Store Connect. It is
+   the only point where 1.4.0 has to stop; steps 1 to 5 do not depend on it. (I cannot
+   see App Store Connect's status from here, so tell me when it changes.)
+7. **Deploy to App Store Connect through Expo (EAS Submit)** once the gate is open:
+   `eas submit -p ios --latest` from the clean clone, which uploads the newest production
+   build (build 11 or later, version 1.4.0) using the project's App Store Connect app ID
+   (`ascAppId` in `eas.json`). You run it, as for 1.2.2 and 1.3.0; I can instead submit
+   that build through the Expo connector if you ask. Check first that the build it picks
+   is the 1.4.0 one and not an older build. It lands in TestFlight once Apple has
+   processed it; smoke-test that build on a real iPhone and iPad.
+8. **App Store Connect (by hand):** create the 1.4.0 version (Apple generally lets you
+   create it once 1.3.0 is out of review), attach the new build, paste the release notes
+   (I will put them on your clipboard), upload the new screenshots, and confirm the
+   privacy answers. Nothing collected changed: no new SDK that gathers data
+   (`react-native-svg` is drawing only), no accounts, no typed personal information any
+   more. Re-check the Kids Category answers anyway. The parental gate is untouched.
+9. **Submit for review.**
 
 ### Draft release notes (What's New)
 
