@@ -8,7 +8,9 @@ import { touchTarget } from '../theme/tokens';
 import type { AvatarId } from '../types/game';
 
 const RING = 4;
-const GAP = 12;
+/** The space the design leaves between animals when there is room, and the least it needs. */
+const COMFORTABLE_GAP = 12;
+const MIN_GAP = 8;
 
 type AvatarPickerProps = {
   selected: AvatarId | null;
@@ -22,7 +24,16 @@ export function AvatarPicker({ selected, onSelect, size = touchTarget.min }: Ava
   const { colors } = useSettings();
 
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Pick your player" style={styles.row}>
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel="Pick your player"
+      // As wide as the design's row at most; on a narrower screen the animals move closer
+      // together (down to MIN_GAP) so all six stay on one line instead of wrapping 5 + 1.
+      style={[
+        styles.row,
+        { maxWidth: AVATARS.length * size + (AVATARS.length - 1) * COMFORTABLE_GAP },
+      ]}
+    >
       {AVATARS.map(({ id, name }) => {
         const isSelected = id === selected;
         return (
@@ -52,10 +63,12 @@ export function AvatarPicker({ selected, onSelect, size = touchTarget.min }: Ava
 
 const styles = StyleSheet.create({
   row: {
+    width: '100%',
+    alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: GAP,
+    justifyContent: 'space-between',
+    gap: MIN_GAP,
   },
   // Drawn outside the animal, in the gap between choices, so the row is as wide with a
   // ring as without one.

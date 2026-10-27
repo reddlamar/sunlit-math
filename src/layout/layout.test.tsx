@@ -1,6 +1,4 @@
-import React from 'react';
 import { renderHook } from '@testing-library/react-native';
-import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { useWindowDimensions } from 'react-native';
 import {
   describeLayout,
@@ -42,55 +40,43 @@ describe('layoutClassForWidth', () => {
 });
 
 describe('describeLayout', () => {
-  it('keeps phones at scale 1 in portrait', () => {
+  it('describes a phone held upright', () => {
     expect(describeLayout(390, 844)).toEqual({
       layoutClass: 'compact',
       width: 390,
       height: 844,
       isLandscape: false,
       isShort: false,
-      scale: 1,
-      contentWidth: 390,
-      safeWidth: 390,
-      safeHeight: 844,
     });
   });
 
-  it('scales up on an iPad in portrait and caps the readable content width', () => {
+  it('describes an iPad in portrait as medium', () => {
     expect(describeLayout(820, 1180)).toMatchObject({
       layoutClass: 'medium',
       isLandscape: false,
       isShort: false,
-      scale: 1.4,
-      contentWidth: 640,
     });
   });
 
-  it('scales up on an iPad in landscape', () => {
+  it('describes an iPad in landscape as expanded', () => {
     expect(describeLayout(1180, 820)).toMatchObject({
       layoutClass: 'expanded',
       isLandscape: true,
       isShort: false,
-      scale: 1.4,
     });
   });
 
-  it('treats a phone turned sideways as short: wide, but not scaled up', () => {
+  it('treats a phone turned sideways as short: wide enough to be expanded, but not tall', () => {
     expect(describeLayout(844, 390)).toMatchObject({
       layoutClass: 'expanded',
       isLandscape: true,
       isShort: true,
-      scale: 1,
     });
   });
 
-  it('subtracts the safe-area insets (notch, home indicator) from the usable size', () => {
-    const insets = { top: 0, bottom: 21, left: 59, right: 59 };
-    expect(describeLayout(844, 390, insets)).toMatchObject({
-      safeWidth: 726,
-      safeHeight: 369,
-      contentWidth: 640,
-    });
+  it('draws the line for short at 480 dp of height', () => {
+    expect(describeLayout(900, 479).isShort).toBe(true);
+    expect(describeLayout(900, 480).isShort).toBe(false);
   });
 
   it('treats a square window as portrait', () => {
@@ -135,17 +121,6 @@ describe('frameSize', () => {
 });
 
 describe('hooks', () => {
-  it('useLayout reads the safe-area insets when a provider supplies them', async () => {
-    mockWindow(844, 390);
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <SafeAreaInsetsContext.Provider value={{ top: 0, bottom: 21, left: 59, right: 59 }}>
-        {children}
-      </SafeAreaInsetsContext.Provider>
-    );
-    const { result } = await renderHook(() => useLayout(), { wrapper });
-    expect(result.current.safeWidth).toBe(726);
-  });
-
   it('useLayout follows the window size', async () => {
     mockWindow(820, 1180);
     const { result } = await renderHook(() => useLayout());

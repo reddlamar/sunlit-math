@@ -113,7 +113,7 @@ export function RoundSummary({
             accessibilityRole="button"
             onPress={onRetrySave}
           >
-            <Text style={[styles.retry, { color: colors.accent }]}>Try again</Text>
+            <Text style={[styles.retry, { color: colors.accentText }]}>Try again</Text>
           </AnimatedPressable>
         </View>
       )}
