@@ -10,11 +10,13 @@ const STORAGE_KEY = 'math60_settings_v1';
 jest.spyOn(sounds, 'setMuted');
 
 function Probe() {
-  const { muted, theme, difficulty, colors, setMuted, setTheme, setDifficulty } = useSettings();
+  const { muted, theme, themePreference, difficulty, colors, setMuted, setTheme, setDifficulty } =
+    useSettings();
   return (
     <>
       <Text testID="muted">{muted ? 'muted' : 'unmuted'}</Text>
       <Text testID="theme">{theme}</Text>
+      <Text testID="preference">{String(themePreference)}</Text>
       <Text testID="difficulty">{difficulty}</Text>
       <Text testID="background">{colors.background}</Text>
       <Text testID="toggle-mute" onPress={() => setMuted(!muted)}>
@@ -22,6 +24,9 @@ function Probe() {
       </Text>
       <Text testID="set-dark" onPress={() => setTheme('dark')}>
         set-dark
+      </Text>
+ <Text testID="set-auto" onPress={() => setTheme(null)}>
+        set-auto
       </Text>
       <Text testID="set-hard" onPress={() => setDifficulty('hard')}>
         set-hard
@@ -108,6 +113,48 @@ describe('SettingsProvider', () => {
 
     fireEvent.press(getByTestId('set-dark'));
 
+    await waitFor(() => expect(getByTestId('theme').props.children).toBe('dark'));
+  });
+
+  it('remembers whether the theme was chosen: null (Auto) until it is', async () => {
+    const { findByTestId, getByTestId } = await render(
+      <SettingsProvider>
+        <Probe />
+      </SettingsProvider>
+    );
+    await findByTestId('theme');
+    expect(getByTestId('preference').props.children).toBe('null');
+
+    fireEvent.press(getByTestId('set-dark'));
+
+    await waitFor(() => expect(getByTestId('preference').props.children).toBe('dark'));
+  });
+
+  it('setTheme(null) goes back to following the phone, and persists that', async () => {
+    let systemListener: ((prefs: { colorScheme: 'light' | 'dark' | 'unspecified' }) => void) | null = null;
+    jest.mocked(Appearance.addChangeListener).mockImplementation((listener) => {
+      systemListener = listener;
+      return { remove: jest.fn() };
+    });
+    const { findByTestId, getByTestId } = await render(
+      <SettingsProvider>
+        <Probe />
+      </SettingsProvider>
+    );
+    await findByTestId('theme');
+    fireEvent.press(getByTestId('set-dark'));
+    await waitFor(() => expect(getByTestId('theme').props.children).toBe('dark'));
+
+    fireEvent.press(getByTestId('set-auto'));
+    await waitFor(() => expect(getByTestId('preference').props.children).toBe('null'));
+    // The phone says light, so Auto means light again...
+    expect(getByTestId('theme').props.children).toBe('light');
+    expect(JSON.parse((await AsyncStorage.getItem(STORAGE_KEY))!).theme).toBeNull();
+
+    // ...and it follows the phone from then on.
+    await act(async () => {
+      systemListener?.({ colorScheme: 'dark' });
+    });
     await waitFor(() => expect(getByTestId('theme').props.children).toBe('dark'));
   });
 

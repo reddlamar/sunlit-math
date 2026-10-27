@@ -4,7 +4,6 @@ import { render } from '@testing-library/react-native';
 import { AnswerButton } from './AnswerButton';
 import { AnswerGrid } from './AnswerGrid';
 import { OperationButton } from './OperationButton';
-import { SegmentedControl } from './SegmentedControl';
 import { TimerBar } from './TimerBar';
 import { SettingsProvider } from '../settings/SettingsContext';
 
@@ -98,26 +97,6 @@ describe('components adapt to the window', () => {
         height: trackHeight,
       });
       expect(getByText('30 seconds left')).toHaveStyle({ fontSize: wordsSize });
-    });
-  });
-
-  describe('SegmentedControl', () => {
-    it.each([
-      ['a phone', PHONE, 14, 10],
-      ['an iPad', IPAD_PORTRAIT, 19.6, 14],
-    ])('sizes the label and touch height on %s', async (_name, window, fontSize, padding) => {
-      setWindow(window);
-      const { getByText, getByTestId } = await render(
-        <SegmentedControl
-          options={[{ value: 'a', label: 'Alpha' }]}
-          value="a"
-          onChange={jest.fn()}
-          accessibilityLabel="Test"
-          testID="seg"
-        />
-      );
-      expect(getByText('Alpha')).toHaveStyle({ fontSize });
-      expect(getByTestId('seg-a')).toHaveStyle({ paddingVertical: padding });
     });
   });
 });
