@@ -3,6 +3,9 @@ export type Operation = 'addition' | 'subtraction' | 'multiplication' | 'divisio
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 
+export const AVATAR_IDS = ['fox', 'owl', 'bear', 'cat', 'frog', 'bunny'] as const;
+export type AvatarId = (typeof AVATAR_IDS)[number];
+
 export type GameState = {
   score: number;
   streak: number;
@@ -24,6 +27,8 @@ export type ScoreEntry = {
   operation: Operation;
   // Optional: scores saved before 1.2.2 have no difficulty recorded.
   difficulty?: Difficulty;
+  // Optional: scores saved before avatars have a typed name and no animal.
+  avatar?: AvatarId;
   createdAt: number;
 };
 

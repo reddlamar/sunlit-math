@@ -2,7 +2,7 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 /** Faces Sunny can wear; the sun and its rays are the same in every one. */
-export type SunnyExpression = 'happy';
+export type SunnyExpression = 'happy' | 'cheer';
 
 type SunnyProps = {
   /** Side length in dp; the artwork scales from its 120 dp master. */
@@ -40,13 +40,56 @@ const LEFT_CHEEK =
 const RIGHT_CHEEK =
   'M78 74C81.3137 74 84 71.3137 84 68C84 64.6863 81.3137 62 78 62C74.6863 62 72 64.6863 72 68C72 71.3137 74.6863 74 78 74Z';
 
-const FACES: Record<SunnyExpression, string[]> = {
+const EYE_ARCS = ['M42 56C46 50.6667 50 50.6667 54 56', 'M66 56C70 50.6667 74 50.6667 78 56'];
+const SMILE = 'M45 68C55 77.3333 65 77.3333 75 68';
+const OPEN_MOUTH =
+  'M46 66H74C74 69.713 72.525 73.274 69.8995 75.8995C67.274 78.525 63.713 80 60 80C56.287 80 52.726 78.525 50.1005 75.8995C47.475 73.274 46 69.713 46 66Z';
+const TONGUE = 'M53 77C57.6667 73.6667 62.3333 73.6667 67 77';
+const ORANGE_SPARKLE = 'M12 24L14 29L19 31L14 33L12 38L10 33L5 31L10 29L12 24Z';
+const BLUE_SPARKLE =
+  'M108 14L109.6 18L113.6 19.6L109.6 21.2L108 25.2L106.4 21.2L102.4 19.6L106.4 18L108 14Z';
+
+function Eyes() {
+  return (
+    <>
+      {EYE_ARCS.map((d) => (
+        <Path
+          key={d}
+          d={d}
+          stroke={FEATURE_COLOR}
+          strokeWidth={3.6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </>
+  );
+}
+
+const FACES: Record<SunnyExpression, () => React.JSX.Element> = {
   // Closed, smiling eyes and a wide smile.
-  happy: [
-    'M42 56C46 50.6667 50 50.6667 54 56',
-    'M66 56C70 50.6667 74 50.6667 78 56',
-    'M45 68C55 77.3333 65 77.3333 75 68',
-  ],
+  happy: () => (
+    <>
+      <Eyes />
+      <Path
+        d={SMILE}
+        stroke={FEATURE_COLOR}
+        strokeWidth={3.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </>
+  ),
+  // The same eyes with an open, laughing mouth, and two sparkles for a celebration.
+  cheer: () => (
+    <>
+      <Eyes />
+      <Path d={OPEN_MOUTH} fill={FEATURE_COLOR} />
+      <Path d={TONGUE} stroke={CHEEK_COLOR} strokeWidth={3} strokeLinecap="round" />
+      <Path d={ORANGE_SPARKLE} fill="#EB7200" />
+      <Path d={BLUE_SPARKLE} fill="#4D8DFF" />
+    </>
+  ),
 };
 
 /**
@@ -71,16 +114,7 @@ export function Sunny({ size, expression = 'happy' }: SunnyProps) {
       <Path d={SHINE} stroke="#FFFFFF" strokeWidth={5} strokeLinecap="round" />
       <Path d={LEFT_CHEEK} fill={CHEEK_COLOR} opacity={0.6} />
       <Path d={RIGHT_CHEEK} fill={CHEEK_COLOR} opacity={0.6} />
-      {FACES[expression].map((d) => (
-        <Path
-          key={d}
-          d={d}
-          stroke={FEATURE_COLOR}
-          strokeWidth={3.6}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
+      {FACES[expression]()}
     </Svg>
   );
 }

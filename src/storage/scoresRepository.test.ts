@@ -5,6 +5,7 @@ import {
   getLastPlayerName,
   getTopScores,
   setLastPlayerName,
+  setScoreAvatar,
 } from './scoresRepository';
 import type { ScoreEntry } from '../types/game';
 
@@ -83,6 +84,57 @@ describe('scoresRepository', () => {
     expect(await getLastPlayerName()).toBe('Ada');
   });
 
+  it('keeps the avatar a score was saved with', async () => {
+    await addScore(makeEntry({ id: 'a', name: 'Fox', avatar: 'fox' }));
+    expect((await getAllScores())[0]).toMatchObject({ name: 'Fox', avatar: 'fox' });
+  });
+
+  describe('setScoreAvatar', () => {
+    it('gives a saved score another avatar and name, leaving the rest as it was', async () => {
+      const before = makeEntry({ id: 'a', name: 'Fox', avatar: 'fox', score: 7 });
+      const other = makeEntry({ id: 'b', name: 'Owl', avatar: 'owl', score: 3 });
+      await addScore(before);
+      await addScore(other);
+
+      await setScoreAvatar('a', 'frog', 'Frog');
+
+      expect(await getAllScores()).toEqual([{ ...before, name: 'Frog', avatar: 'frog' }, other]);
+    });
+
+    it('can give an old score with a typed name an avatar', async () => {
+      await addScore(makeEntry({ id: 'old', name: 'Maya' }));
+
+      await setScoreAvatar('old', 'cat', 'Cat');
+
+      expect((await getAllScores())[0]).toMatchObject({ name: 'Cat', avatar: 'cat' });
+    });
+
+    it('rejects, changing nothing, when that score is not saved', async () => {
+      const existing = makeEntry({ id: 'a', name: 'Fox', avatar: 'fox' });
+      await addScore(existing);
+
+      await expect(setScoreAvatar('missing', 'owl', 'Owl')).rejects.toThrow('No saved score');
+      expect(await getAllScores()).toEqual([existing]);
+    });
+
+    it('rejects when the write fails, leaving the avatar as it was', async () => {
+      const existing = makeEntry({ id: 'a', name: 'Fox', avatar: 'fox' });
+      await addScore(existing);
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('full'));
+
+      await expect(setScoreAvatar('a', 'owl', 'Owl')).rejects.toThrow('full');
+      expect(await getAllScores()).toEqual([existing]);
+    });
+
+    it('queues behind a save that is still being written, so neither is lost', async () => {
+      const first = addScore(makeEntry({ id: 'a', name: 'Fox', avatar: 'fox' }));
+      const change = setScoreAvatar('a', 'bear', 'Bear');
+      await Promise.all([first, change]);
+
+      expect(await getAllScores()).toMatchObject([{ id: 'a', avatar: 'bear', name: 'Bear' }]);
+    });
+  });
+
   describe('resilience', () => {
     const KEY = 'math60_scores_v1';
 
@@ -115,6 +167,16 @@ describe('scoresRepository', () => {
         JSON.stringify([old, valid, { ...valid, id: 'bad', difficulty: 'impossible' }])
       );
       expect((await getAllScores()).map((entry) => entry.id)).toEqual(['old', 'valid']);
+    });
+
+    it('drops a score with an avatar that does not exist, but keeps ones without or with a real one', async () => {
+      const plain = makeEntry({ id: 'plain', score: 1 });
+      const real = makeEntry({ id: 'real', score: 2, avatar: 'owl' });
+      await AsyncStorage.setItem(
+        KEY,
+        JSON.stringify([plain, real, { ...real, id: 'bad', avatar: 'dragon' }])
+      );
+      expect((await getAllScores()).map((entry) => entry.id)).toEqual(['plain', 'real']);
     });
 
     it('treats the remembered name as optional storage that may fail', async () => {

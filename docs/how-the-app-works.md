@@ -7,19 +7,24 @@ rules behind each part. File paths point at where each rule lives in the code.
 
 1. **Splash.** The app holds a navy splash with the sun logo for at least one second
    and until the fonts have loaded ([App.tsx](../App.tsx)).
-2. **Home.** Four large operation buttons (+ − × ÷), a trophy button for the
-   leaderboard, and a "Top Score" card showing the best score on the device.
-   A bottom tab bar switches between Home and Settings.
+2. **Home.** Sunny the sun says hello above four large operation buttons (+ − × ÷),
+   and a "Personal best" card shows the best score on the device and opens the
+   leaderboard. A tab bar switches between Home and Settings (a side rail on wide
+   windows).
 3. **Get Ready.** Choosing an operation opens the game screen with a Get Ready card:
    "You have 60 seconds". Tapping **Start** runs a 3-2-1 countdown, then the round
    begins. **Back** leaves without playing.
 4. **The round.** A question appears with four answer buttons. The timer bar and
    seconds counter run down from 60. Tapping an answer immediately shows the next
    question. The player can pause, resume, or restart (with a confirmation).
-5. **Time's up.** The round ends and the player is asked for a name (up to 20
-   characters), which saves the score. The last name used is filled in for them.
-6. **Summary.** "Nice work, *name*!" with the score, plus **Play Again** and
-   **View Leaderboard**.
+5. **Time's up.** The round ends and the score is saved at once, under the animal the
+   player used last (Fox the first time). A wrong answer along the way showed the right
+   one for about a second, with the clock stopped.
+6. **Result.** Sunny cheers, one to three stars say how the round compared with the
+   player's best on that operation and level (three for a new best, two for within
+   three quarters of it or a first round, one otherwise), and the score and best are
+   shown. **Pick your player** changes the animal on the saved score. **Play again** and
+   **Home** follow.
 
 ## Game rules
 
@@ -116,8 +121,8 @@ All keys live in AsyncStorage:
 
 | Key | Contents |
 | --- | --- |
-| `math60_scores_v1` | List of `{ id, name, score, operation, difficulty?, createdAt }` |
-| `math60_last_name_v1` | The last player name, used to prefill the name card |
+| `math60_scores_v1` | List of `{ id, name, score, operation, difficulty?, avatar?, createdAt }`; `avatar` is one of fox, owl, bear, cat, frog, bunny, and `name` is then the animal's name |
+| `math60_last_name_v1` | The last animal's name, used to pre-select it. A name typed before 1.4.0 matches no animal |
 | `math60_settings_v1` | `{ muted, theme, difficulty }` (`theme` is `null` until chosen) |
 | `math60_unlocked_v1` | `"true"` once the unlock is owned |
 

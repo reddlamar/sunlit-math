@@ -1,8 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { PlayerAvatar } from './avatars/PlayerAvatar';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily, operationColors, radius } from '../theme/tokens';
 import type { ScoreEntry } from '../types/game';
+
+const AVATAR_SIZE = 44;
 
 type TopPlayersPreviewProps = {
   scores: ScoreEntry[];
@@ -30,6 +33,7 @@ export function TopPlayersPreview({ scores }: TopPlayersPreviewProps) {
           ]}
         >
           <Text style={[styles.rank, { color: colors.textSecondary }]}>{index + 1}</Text>
+          <PlayerAvatar entry={entry} size={AVATAR_SIZE} />
           <Text numberOfLines={1} style={[styles.name, { color: colors.textPrimary }]}>
             {entry.name}
           </Text>

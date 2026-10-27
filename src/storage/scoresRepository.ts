@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isAvatarId } from '../game/avatars';
 import { OPERATIONS } from '../game/operations';
-import { DIFFICULTIES, type Difficulty, type Operation, type ScoreEntry } from '../types/game';
+import {
+  DIFFICULTIES,
+  type AvatarId,
+  type Difficulty,
+  type Operation,
+  type ScoreEntry,
+} from '../types/game';
 
 const KEY = 'math60_scores_v1';
 const LAST_NAME_KEY = 'math60_last_name_v1';
@@ -23,7 +30,9 @@ function isScoreEntry(value: unknown): value is ScoreEntry {
     OPERATION_NAMES.includes(entry.operation) &&
     // Scores saved before 1.2.2 have no difficulty; when present it must be a real one.
     (entry.difficulty === undefined ||
-      (typeof entry.difficulty === 'string' && DIFFICULTY_NAMES.includes(entry.difficulty)))
+      (typeof entry.difficulty === 'string' && DIFFICULTY_NAMES.includes(entry.difficulty))) &&
+    // Scores saved before avatars have none; when present it must be a real animal.
+    (entry.avatar === undefined || isAvatarId(entry.avatar))
   );
 }
 
@@ -66,6 +75,25 @@ export function addScore(entry: ScoreEntry): Promise<void> {
     // would erase every score already stored.
     const scores = await readScores();
     scores.push(entry);
+    await AsyncStorage.setItem(KEY, JSON.stringify(scores));
+  });
+  writeQueue = write.catch(() => {});
+  return write;
+}
+
+/**
+ * Gives a saved score another avatar (and its name), as when the player picks a different
+ * animal on the result screen. Rejects if the write fails, or if the score is gone.
+ */
+export function setScoreAvatar(id: string, avatar: AvatarId, name: string): Promise<void> {
+  const write = writeQueue.then(async () => {
+    const scores = await readScores();
+    const entry = scores.find((candidate) => candidate.id === id);
+    if (!entry) {
+      throw new Error(`No saved score ${id}`);
+    }
+    entry.avatar = avatar;
+    entry.name = name;
     await AsyncStorage.setItem(KEY, JSON.stringify(scores));
   });
   writeQueue = write.catch(() => {});
