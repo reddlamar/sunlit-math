@@ -16,7 +16,6 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 
 const PHONE = { width: 390, height: 844 };
 const IPAD_PORTRAIT = { width: 820, height: 1180 };
-const IPAD_LANDSCAPE = { width: 1180, height: 820 };
 const PHONE_LANDSCAPE = { width: 844, height: 390 };
 
 const setWindow = ({ width, height }: { width: number; height: number }) =>
@@ -28,25 +27,6 @@ const setWindow = ({ width, height }: { width: number; height: number }) =>
   });
 
 describe('components adapt to the window', () => {
-  describe('OperationButton', () => {
-    const renderTile = () =>
-      render(
-        <OperationButton operation="addition" symbol="+" label="Addition" onPress={jest.fn()} />
-      );
-
-    it.each([
-      ['a phone', PHONE, 161, 52],
-      ['an iPad in portrait', IPAD_PORTRAIT, 286, 72.8],
-      ['an iPad in landscape', IPAD_LANDSCAPE, 268, 72.8],
-      ['a phone turned sideways', PHONE_LANDSCAPE, 184, 52],
-    ])('sizes its tile and symbol on %s', async (_name, window, size, symbolSize) => {
-      setWindow(window);
-      const { getByRole, getByText } = await renderTile();
-      expect(getByRole('button')).toHaveStyle({ width: size, height: size });
-      expect(getByText('+')).toHaveStyle({ fontSize: symbolSize });
-    });
-  });
-
   it('keeps a long label such as Multiplication on one line, shrinking it if the tile is small', async () => {
     setWindow(PHONE_LANDSCAPE);
     const { getByText } = await render(

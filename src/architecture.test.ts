@@ -31,7 +31,7 @@ const ALLOWED_LAYER_IMPORTS: Record<string, string[]> = {
     'utils',
     'layout',
   ],
-  navigation: ['types', 'screens', 'settings'],
+  navigation: ['types', 'screens', 'settings', 'theme', 'components', 'layout'],
   screens: [
     'types',
     'theme',

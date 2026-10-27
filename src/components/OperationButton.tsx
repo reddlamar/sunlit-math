@@ -1,11 +1,13 @@
 import React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
+import { Icon } from './icons/Icon';
 import { useShake } from './useShake';
 import { fontFamily, operationColors, radius, staticColors } from '../theme/tokens';
 import { cardShadow } from '../theme/shadow';
-import { operationTileSize, scaled, useLayout } from '../layout/layout';
 import type { Operation } from '../types/game';
+
+const LOCK_SIZE = 28;
 
 type OperationButtonProps = {
   operation: Operation;
@@ -13,6 +15,8 @@ type OperationButtonProps = {
   label: string;
   locked?: boolean;
   onPress: (operation: Operation) => void;
+  /** Sizes the tile: it fills whatever box this gives it. */
+  wrapperStyle?: StyleProp<ViewStyle>;
 };
 
 export function OperationButton({
@@ -21,10 +25,9 @@ export function OperationButton({
   label,
   locked = false,
   onPress,
+  wrapperStyle,
 }: OperationButtonProps) {
   const { shake, shakeStyle } = useShake();
-  const layout = useLayout();
-  const size = operationTileSize(layout);
 
   const handlePress = () => {
     shake();
@@ -35,71 +38,53 @@ export function OperationButton({
     <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={locked ? `${label} (locked, unlock to play)` : label}
-      style={[
-        styles.button,
-        {
-          backgroundColor: operationColors[operation],
-          width: size,
-          height: size,
-        },
-      ]}
+      wrapperStyle={wrapperStyle}
+      style={[styles.button, { backgroundColor: operationColors[operation] }]}
       onPress={handlePress}
     >
       <Animated.View style={[styles.content, shakeStyle]}>
-        <Text style={[styles.symbol, { fontSize: scaled(52, layout.scale) }]}>{symbol}</Text>
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={[styles.label, { fontSize: scaled(19, layout.scale) }]}
-        >
+        {/* Locked tiles keep their full color: fading the fill would drop the white text
+            below readable contrast, so the lock and the word "Locked" carry the state. */}
+        {locked && <Icon name="lock" size={LOCK_SIZE} color={staticColors.onColor} />}
+        <Text style={styles.symbol}>{symbol}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.label, styles.fullWidth]}>
           {label}
         </Text>
+        {locked && <Text style={styles.label}>Locked</Text>}
       </Animated.View>
-      {locked && (
-        <View style={styles.lockBadge}>
-          <Text style={styles.lockIcon}>🔒</Text>
-        </View>
-      )}
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
+    flex: 1,
     borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
     ...cardShadow({ elevation: 6, opacity: 0.18, radius: 8 }),
   },
   content: {
     alignItems: 'center',
+    gap: 4,
   },
   symbol: {
+    fontSize: 44,
+    lineHeight: 52,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
     color: staticColors.onColor,
   },
+  // A defined width lets the label measure itself, so a long word shrinks to fit the tile.
+  fullWidth: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+  },
   label: {
-    marginTop: 8,
+    fontSize: 20,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
     color: staticColors.onColor,
-  },
-  // Locked buttons keep their full color: fading the fill would drop the white label
-  // below readable contrast. The lock badge carries the locked state instead.
-  lockBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...cardShadow({ elevation: 2, opacity: 0.2, radius: 3, offsetHeight: 1 }),
-  },
-  lockIcon: {
-    fontSize: 16,
   },
 });

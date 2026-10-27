@@ -15,7 +15,7 @@ table and fails the build on any import cycle.
 | `types` | Shared types and the lists they come from (`DIFFICULTIES`, `THEMES`) | — |
 | `utils` | `randomInt`, `shuffle`, `createId` | — |
 | `audio` | Sound pool and mute switch | — |
-| `layout` | Window size classes, scale factor, tile sizing (`useLayout`, `useLayoutClass`) | — |
+| `layout` | Window size classes, scale factor, how Home arranges itself (`useLayout`, `useLayoutClass`, `homeArrangement`) | — |
 | `theme` | Color tokens, fonts, shadows | `types` |
 | `game` | Pure game logic: generators, scoring, timer, engine, operation list | `types`, `utils` |
 | `storage` | Persistent score list | `types`, `game` |
@@ -23,7 +23,7 @@ table and fails the build on any import cycle.
 | `settings` | Persisted settings and theme resolution | `types`, `theme`, `audio` |
 | `components` | Reusable UI pieces, including the SVG icon set (`components/icons`, one `Icon` component drawing named paths in any color) | all layers below the screens, including `layout` |
 | `screens` | Home, Game, Leaderboard, Settings | everything below |
-| `navigation` | Route types and the navigator | `types`, `screens`, `settings` |
+| `navigation` | Route types, the navigator, and tab bar vs. rail placement | `types`, `screens`, `settings`, `theme`, `components`, `layout` |
 
 ```
         screens ──► components ──► settings ──► theme ──► types

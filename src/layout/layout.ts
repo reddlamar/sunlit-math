@@ -17,14 +17,6 @@ export const READABLE_MAX_WIDTH = 640;
 /** How much sizes grow on a tablet-sized window. */
 const TABLET_SCALE = 1.4;
 
-const TILE_BASE_SIZE = 220;
-const SCREEN_PADDING = 24;
-const TILE_GAP = 20;
-/** Vertical space the Home header, paddings and tab bar take in landscape. */
-const HOME_CHROME_HEIGHT = 190;
-/** A tile never shrinks below this to fit the height; Home scrolls instead. */
-const MIN_TILE_SIZE = 140;
-
 export type Layout = {
   layoutClass: LayoutClass;
   width: number;
@@ -70,22 +62,28 @@ export function describeLayout(
   };
 }
 
-/** Side length of a Home operation tile: 2 x 2 upright, one row of four sideways. */
-export function operationTileSize({
-  isLandscape,
-  scale,
-  safeWidth,
-  safeHeight,
-  contentWidth,
-}: Layout) {
-  const maxSize = TILE_BASE_SIZE * scale;
-  if (isLandscape) {
-    const fitWidth = (safeWidth - SCREEN_PADDING * 2 - TILE_GAP * 3) / 4;
-    const fitHeight = Math.max(safeHeight - HOME_CHROME_HEIGHT, MIN_TILE_SIZE);
-    return Math.floor(Math.min(maxSize, fitWidth, fitHeight));
+/**
+ * How Home arranges itself: tiles stacked under the greeting, a greeting and scores pane
+ * beside the tiles on a wide landscape window, or a single row of tiles on a phone turned
+ * sideways. A wide window held upright keeps the stacked column.
+ */
+export type HomeArrangement = 'stacked' | 'twoPane' | 'row';
+
+export function homeArrangement({ layoutClass, isShort, isLandscape }: Layout): HomeArrangement {
+  if (isShort) {
+    return 'row';
   }
-  const fitWidth = (contentWidth - SCREEN_PADDING * 2 - TILE_GAP) / 2;
-  return Math.floor(Math.min(maxSize, fitWidth));
+  return layoutClass === 'expanded' && isLandscape ? 'twoPane' : 'stacked';
+}
+
+/** The size set Home's pieces are drawn at: the design's compact, medium and wide frames. */
+export type HomeSize = 'compact' | 'medium' | 'wide';
+
+export function homeSize(layout: Layout): HomeSize {
+  if (homeArrangement(layout) === 'twoPane') {
+    return 'wide';
+  }
+  return layout.isShort || layout.layoutClass === 'compact' ? 'compact' : 'medium';
 }
 
 /** A phone-scale size grown for the current layout, rounded to a tenth of a dp. */

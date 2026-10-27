@@ -5,7 +5,8 @@ import { useWindowDimensions } from 'react-native';
 import {
   describeLayout,
   layoutClassForWidth,
-  operationTileSize,
+  homeArrangement,
+  homeSize,
   useLayout,
   useLayoutClass,
 } from './layout';
@@ -96,37 +97,27 @@ describe('describeLayout', () => {
   });
 });
 
-describe('operationTileSize', () => {
-  it('fills two columns on a phone', () => {
-    expect(operationTileSize(describeLayout(390, 844))).toBe(161);
+describe('homeArrangement', () => {
+  it.each([
+    ['a phone', 390, 844, 'stacked'],
+    ['an iPad in portrait (medium)', 820, 1180, 'stacked'],
+    ['an iPad in landscape (expanded)', 1180, 820, 'twoPane'],
+    ['a large iPad held upright (expanded, but not landscape)', 1032, 1376, 'stacked'],
+    ['a phone turned sideways, though it is wide enough to be expanded', 874, 402, 'row'],
+  ])('arranges Home for %s', (_name, width, height, expected) => {
+    expect(homeArrangement(describeLayout(width, height))).toBe(expected);
   });
+});
 
-  it('never exceeds the original 220 dp tile on a small phone', () => {
-    expect(operationTileSize(describeLayout(430, 932))).toBeLessThanOrEqual(220);
-  });
-
-  it('grows on an iPad in portrait but stays inside the readable column', () => {
-    expect(operationTileSize(describeLayout(820, 1180))).toBe(286);
-  });
-
-  it('puts four tiles in one row in landscape on an iPad', () => {
-    expect(operationTileSize(describeLayout(1180, 820))).toBe(268);
-  });
-
-  it('shrinks to fit the height when a phone is turned sideways', () => {
-    expect(operationTileSize(describeLayout(844, 390))).toBe(184);
-  });
-
-  it('never makes a tile smaller than 140 dp just to fit a very short window', () => {
-    expect(operationTileSize(describeLayout(844, 300))).toBe(140);
-  });
-
-  it('keeps four tiles in one row when the notch eats the sides of a sideways phone', () => {
-    const layout = describeLayout(844, 390, { top: 0, bottom: 21, left: 59, right: 59 });
-    const size = operationTileSize(layout);
-    expect(size).toBe(154);
-    // four tiles and three 20 dp gaps must fit in the safe width minus the 24 dp padding
-    expect(size * 4 + 60).toBeLessThanOrEqual(layout.safeWidth - 48);
+describe('homeSize', () => {
+  it.each([
+    ['a phone', 390, 844, 'compact'],
+    ['an iPad in portrait', 820, 1180, 'medium'],
+    ['a large iPad held upright', 1032, 1376, 'medium'],
+    ['an iPad in landscape', 1180, 820, 'wide'],
+    ['a phone turned sideways, however wide it is', 874, 402, 'compact'],
+  ])('draws Home for %s at the %s size', (_name, width, height, expected) => {
+    expect(homeSize(describeLayout(width, height))).toBe(expected);
   });
 });
 

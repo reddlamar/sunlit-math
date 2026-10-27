@@ -9,7 +9,13 @@ import { PurchaseProvider } from '../purchases/PurchaseContext';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { addScore } from '../storage/scoresRepository';
 import { passParentalGate } from '../testUtils/parentalGate';
-import { PHONE, PHONE_LANDSCAPE, IPAD_PORTRAIT, setWindow } from '../testUtils/window';
+import {
+  PHONE,
+  PHONE_LANDSCAPE,
+  IPAD_PORTRAIT,
+  IPAD_LANDSCAPE,
+  setWindow,
+} from '../testUtils/window';
 import type { GameScreenProps, HomeScreenProps, RootStackParamList } from '../navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,17 +83,17 @@ describe('HomeScreen', () => {
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
-  it('navigates to the Leaderboard when the leaderboard icon is tapped', async () => {
+  it('navigates to the Leaderboard when the personal best card is tapped', async () => {
     const navigation = makeNavigation();
     const { getByLabelText } = await renderHomeScreen(navigation);
 
-    await fireEvent.press(getByLabelText('View leaderboard'));
+    await fireEvent.press(getByLabelText('View personal best on the leaderboard'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('Leaderboard', {});
   });
 });
 
-describe('HomeScreen top score', () => {
+describe('HomeScreen personal best', () => {
   function GameStub({ navigation }: GameScreenProps) {
     return (
       <Text
@@ -105,7 +111,7 @@ describe('HomeScreen top score', () => {
     await AsyncStorage.clear();
   });
 
-  it('refreshes the top score when returning to Home from a game', async () => {
+  it('refreshes the personal best when returning to Home from a game', async () => {
     const { getByText, findByText } = await renderInNavigator(
       <>
         <Stack.Screen name="MainTabs" component={HomeScreen as never} />
@@ -118,23 +124,40 @@ describe('HomeScreen top score', () => {
     await fireEvent.press(getByText('+'));
     await fireEvent.press(await findByText('finish game'));
 
-    expect(await findByText('Ada · 12')).toBeTruthy();
+    expect(await findByText('12 points · Addition')).toBeTruthy();
   });
 });
 
 describe('HomeScreen layout', () => {
   afterEach(() => setWindow(PHONE));
 
-  it('lays the tiles out in a readable column on an iPad in portrait', async () => {
-    setWindow(IPAD_PORTRAIT);
-    const { getByTestId } = await renderHomeScreen();
-    expect(getByTestId('operation-grid')).toHaveStyle({ maxWidth: 640 });
+  it('greets the player with Sunny', async () => {
+    const { getByText, getByTestId } = await renderHomeScreen();
+    expect(getByText('Hi there!')).toBeTruthy();
+    expect(getByText('Pick a game')).toBeTruthy();
+    expect(getByTestId('sunny', { includeHiddenElements: true })).toBeTruthy();
   });
 
-  it('lets the four tiles share one row when the window is wide', async () => {
+  it('stacks the greeting, tiles and personal best in a readable column', async () => {
+    setWindow(IPAD_PORTRAIT);
+    const { getByTestId } = await renderHomeScreen();
+    expect(getByTestId('home-column')).toHaveStyle({ maxWidth: 640 });
+    expect(StyleSheet.flatten(getByTestId('operation-grid').props.style).flex).toBeUndefined();
+  });
+
+  it('puts the greeting and scores beside the tiles when the window is expanded', async () => {
+    setWindow(IPAD_LANDSCAPE);
+    await addScore({ id: '1', name: 'Ada', score: 12, operation: 'addition', createdAt: 1 });
+    const { getByTestId, queryByTestId, findByText } = await renderHomeScreen();
+    expect(queryByTestId('home-column')).toBeNull();
+    expect(StyleSheet.flatten(getByTestId('operation-grid').props.style).flex).toBe(1);
+    expect(await findByText('Top players')).toBeTruthy();
+  });
+
+  it('lets the four tiles share one row on a phone turned sideways', async () => {
     setWindow(PHONE_LANDSCAPE);
     const { getByTestId, getByText } = await renderHomeScreen();
-    expect(StyleSheet.flatten(getByTestId('operation-grid').props.style).maxWidth).toBeUndefined();
+    expect(getByTestId('operation-grid').children).toHaveLength(1);
     expect(getByText('÷')).toBeTruthy();
   });
 });
@@ -142,37 +165,11 @@ describe('HomeScreen layout', () => {
 describe('HomeScreen on a short window', () => {
   afterEach(() => setWindow(PHONE));
 
-  it('scrolls, so the top score is never hidden behind the tab bar', async () => {
+  it('scrolls, so the personal best is never hidden behind the tab bar', async () => {
     setWindow(PHONE_LANDSCAPE);
     const { getByTestId } = await renderHomeScreen();
     const scroll = getByTestId('home-scroll');
     expect(within(scroll).getByTestId('operation-grid')).toBeTruthy();
-    expect(within(scroll).getByLabelText('View top score on the leaderboard')).toBeTruthy();
-  });
-});
-
-describe('HomeScreen top-score card on an iPad', () => {
-  afterEach(() => setWindow(PHONE));
-
-  it('grows its text with the layout, so it matches the larger tiles', async () => {
-    setWindow(IPAD_PORTRAIT);
-    const { findByText } = await renderHomeScreen();
-    expect(await findByText(/Top Score|No scores yet/)).toHaveStyle({ fontSize: 18.2 });
-  });
-});
-
-describe('HomeScreen header on a short window', () => {
-  afterEach(() => setWindow(PHONE));
-
-  it('shrinks the banner so the tiles keep their room', async () => {
-    setWindow(PHONE_LANDSCAPE);
-    const { getByTestId } = await renderHomeScreen();
-    expect(getByTestId('header-banner')).toHaveStyle({ maxWidth: 392 });
-  });
-
-  it('lets the banner fill the header otherwise', async () => {
-    setWindow(PHONE);
-    const { getByTestId } = await renderHomeScreen();
-    expect(StyleSheet.flatten(getByTestId('header-banner').props.style).maxWidth).toBeUndefined();
+    expect(within(scroll).getByLabelText('View personal best on the leaderboard')).toBeTruthy();
   });
 });
