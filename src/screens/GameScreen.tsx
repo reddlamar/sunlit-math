@@ -4,7 +4,9 @@ import { usePreventRemove } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { AnswerGrid } from '../components/AnswerGrid';
+import { FeedbackHint } from '../components/FeedbackHint';
 import { IconButton } from '../components/IconButton';
+import { PointsFloat } from '../components/PointsFloat';
 import { QuestionCard } from '../components/QuestionCard';
 import { StatChip } from '../components/StatChip';
 import { StreakIndicator } from '../components/StreakIndicator';
@@ -12,6 +14,7 @@ import { TimerBar } from '../components/TimerBar';
 import { NameEntryModal } from '../components/NameEntryModal';
 import { RoundSummary } from '../components/RoundSummary';
 import { GetReadyModal } from '../components/GetReadyModal';
+import { useAnswerFeedback } from '../components/useAnswerFeedback';
 import { useShake } from '../components/useShake';
 import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import { useGameEngine } from '../game/useGameEngine';
@@ -29,6 +32,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
   const { shake, shakeStyle } = useShake();
+  const reveal = useAnswerFeedback(engine.lastAnswer);
   const layout = useLayout();
   const arrangement = gameArrangement(layout);
 
@@ -147,9 +151,12 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const streak = <StreakIndicator streak={engine.streak} />;
   const timer = <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />;
 
+  // A miss holds the sum it was for, so the child sees which answer was right.
+  const shown = reveal?.problem ?? engine.problem;
+  const hint = <FeedbackHint isMiss={reveal !== null} />;
   const isSideways = arrangement === 'sideways';
   const isPaused = engine.status === 'paused';
-  const playArea = engine.problem && (
+  const playArea = shown && (
     <View
       testID="problem-area"
       style={[
@@ -175,7 +182,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
       ) : (
         <>
           <QuestionCard
-            question={engine.problem.question}
+            question={shown.question}
             fontSize={isSideways ? SIDEWAYS_QUESTION_SIZE : undefined}
             style={
               arrangement === 'stacked'
@@ -185,12 +192,16 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
           />
           <View style={isSideways && styles.answersSideways}>
             <AnswerGrid
-              choices={engine.problem.choices}
-              disabled={engine.status !== 'playing'}
+              choices={shown.choices}
+              reveal={reveal ? { correct: reveal.problem.answer, wrong: reveal.chosen } : undefined}
+              // The board is locked while a miss is shown, so a quick second tap can't land
+              // on a sum the player hasn't seen yet.
+              disabled={engine.status !== 'playing' || reveal !== null}
               onAnswer={handleAnswer}
               shakeStyle={shakeStyle}
             />
           </View>
+          <PointsFloat outcome={engine.lastAnswer} />
         </>
       )}
     </View>
@@ -205,6 +216,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
             {score}
             {streak}
             {timer}
+            {hint}
           </View>
           {playArea}
         </View>
@@ -230,6 +242,7 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
           </View>
           {timer}
           {playArea}
+          {hint}
         </View>
       )}
 

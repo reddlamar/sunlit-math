@@ -1,7 +1,9 @@
 import React from 'react';
+import { AccessibilityInfo, Animated } from 'react-native';
 import { render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StreakIndicator } from './StreakIndicator';
+import * as sounds from '../audio/sounds';
 import { SettingsProvider } from '../settings/SettingsContext';
 import { dark, light } from '../theme/tokens';
 import { hasStyleValue } from '../testUtils/styleAssertions';
@@ -68,5 +70,55 @@ describe('StreakIndicator', () => {
       ).toBe(true);
     });
     expect(hasStyleValue(getByText('3').props.style, 'color', dark.streak)).toBe(true);
+  });
+
+  describe('at a milestone', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const reachMilestone = async () => {
+      const utils = await render(
+        <SettingsProvider>
+          <StreakIndicator streak={2} />
+        </SettingsProvider>
+      );
+      await utils.rerender(
+        <SettingsProvider>
+          <StreakIndicator streak={3} />
+        </SettingsProvider>
+      );
+    };
+
+    it('plays the streak sound and pops the flame', async () => {
+      const streakSound = jest.spyOn(sounds, 'playStreakSound').mockImplementation(() => {});
+      const spring = jest.spyOn(Animated, 'spring');
+
+      await reachMilestone();
+
+      expect(streakSound).toHaveBeenCalledTimes(1);
+      expect(spring).toHaveBeenCalled();
+    });
+
+    it('still plays the sound but skips the pop when the player wants reduced motion', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+      const streakSound = jest.spyOn(sounds, 'playStreakSound').mockImplementation(() => {});
+      const spring = jest.spyOn(Animated, 'spring');
+      const utils = await render(
+        <SettingsProvider>
+          <StreakIndicator streak={2} />
+        </SettingsProvider>
+      );
+      // Let the reduced-motion setting reach the component before the milestone.
+      await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
+      await utils.rerender(
+        <SettingsProvider>
+          <StreakIndicator streak={3} />
+        </SettingsProvider>
+      );
+
+      expect(streakSound).toHaveBeenCalledTimes(1);
+      expect(spring).not.toHaveBeenCalled();
+    });
   });
 });

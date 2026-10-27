@@ -171,6 +171,112 @@ describe('useGameEngine', () => {
     expect(outcome).toBe('correct');
   });
 
+  describe('lastAnswer', () => {
+    const startRound = async () => {
+      const hook = await renderHook(() => useGameEngine('addition'));
+      await act(async () => {
+        hook.result.current.start();
+      });
+      return hook.result;
+    };
+
+    it('is null before the first answer', async () => {
+      const result = await startRound();
+      expect(result.current.lastAnswer).toBeNull();
+    });
+
+    it('records a correct answer with the sum it answered and the points it earned', async () => {
+      const result = await startRound();
+      const answered = result.current.problem!;
+
+      await act(async () => {
+        result.current.submitAnswer(answered.answer);
+      });
+
+      expect(result.current.lastAnswer).toEqual({
+        id: 1,
+        problem: answered,
+        chosen: answered.answer,
+        result: 'correct',
+        points: 1,
+      });
+    });
+
+    it('records a wrong answer with the button that was tapped and the point it cost', async () => {
+      const result = await startRound();
+      const answered = result.current.problem!;
+      const wrong = answered.answer + 1000;
+
+      await act(async () => {
+        result.current.submitAnswer(wrong);
+      });
+
+      expect(result.current.lastAnswer).toMatchObject({
+        id: 1,
+        problem: answered,
+        chosen: wrong,
+        result: 'wrong',
+        points: -1,
+      });
+    });
+
+    it('reports the streak bonus as the points of the fourth right answer in a row', async () => {
+      const result = await startRound();
+
+      for (let answer = 1; answer <= 4; answer++) {
+        await act(async () => {
+          result.current.submitAnswer(result.current.problem!.answer);
+        });
+        expect(result.current.lastAnswer!.id).toBe(answer);
+      }
+
+      expect(result.current.lastAnswer!.points).toBe(3);
+    });
+
+    it('judges two answers made in the same frame one after the other', async () => {
+      const result = await startRound();
+      const first = result.current.problem!.answer;
+
+      await act(async () => {
+        result.current.submitAnswer(first);
+        result.current.submitAnswer(result.current.problem!.answer + 1000);
+      });
+
+      expect(result.current.score).toBe(0);
+      expect(result.current.lastAnswer).toMatchObject({ id: 2, result: 'wrong', points: -1 });
+    });
+
+    it('clears when a new round starts and counts from 1 again', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.submitAnswer(result.current.problem!.answer);
+      });
+
+      await act(async () => {
+        result.current.start();
+      });
+      expect(result.current.lastAnswer).toBeNull();
+
+      await act(async () => {
+        result.current.submitAnswer(result.current.problem!.answer);
+      });
+      expect(result.current.lastAnswer!.id).toBe(1);
+    });
+
+    it('is not touched by an ignored answer', async () => {
+      const result = await startRound();
+      await act(async () => {
+        result.current.pause();
+      });
+
+      await act(async () => {
+        result.current.submitAnswer(result.current.problem!.answer);
+      });
+
+      expect(result.current.lastAnswer).toBeNull();
+    });
+  });
+
   it('keeps start, submitAnswer, pause and resume stable across timer ticks', async () => {
     const { result } = await renderHook(() => useGameEngine('addition'));
     await act(async () => {

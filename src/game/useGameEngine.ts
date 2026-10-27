@@ -2,7 +2,14 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { onCorrectAnswer, onWrongAnswer } from './scoring';
 import { generatorForOperation } from './problemGenerators';
 import { useGameTimer } from './useGameTimer';
-import type { Difficulty, GameState, GameStatus, Operation, Problem } from '../types/game';
+import type {
+  AnswerOutcome,
+  Difficulty,
+  GameState,
+  GameStatus,
+  Operation,
+  Problem,
+} from '../types/game';
 
 const GAME_DURATION_MS = 60000;
 
@@ -12,6 +19,8 @@ export type AnswerResult = 'correct' | 'wrong' | 'ignored';
 
 export type UseGameEngineResult = {
   problem: Problem | null;
+  /** The most recent answer of this round, for feedback. Null before the first one. */
+  lastAnswer: AnswerOutcome | null;
   score: number;
   streak: number;
   timeLeft: number;
@@ -31,6 +40,7 @@ export function useGameEngine(
   const [problem, setProblem] = useState<Problem | null>(null);
   const [gameState, setGameState] = useState<GameState>({ score: 0, streak: 0 });
   const [status, setStatus] = useState<GameStatus>('idle');
+  const [lastAnswer, setLastAnswer] = useState<AnswerOutcome | null>(null);
 
   // The current problem and status are mirrored in refs so the callbacks below read
   // the latest values synchronously. Two quick taps in one frame can't both be
@@ -38,6 +48,8 @@ export function useGameEngine(
   // across the 10 timer re-renders per second (which lets the answer grid skip them).
   const problemRef = useRef<Problem | null>(null);
   const statusRef = useRef<GameStatus>('idle');
+  const gameStateRef = useRef<GameState>({ score: 0, streak: 0 });
+  const answerCountRef = useRef(0);
 
   const updateProblem = useCallback((next: Problem | null) => {
     problemRef.current = next;
@@ -60,12 +72,19 @@ export function useGameEngine(
     resume: resumeTimer,
   } = useGameTimer(GAME_DURATION_MS, handleExpire);
 
+  const updateGameState = useCallback((next: GameState) => {
+    gameStateRef.current = next;
+    setGameState(next);
+  }, []);
+
   const start = useCallback(() => {
-    setGameState({ score: 0, streak: 0 });
+    updateGameState({ score: 0, streak: 0 });
+    answerCountRef.current = 0;
+    setLastAnswer(null);
     updateProblem(generator(difficulty));
     updateStatus('playing');
     startTimer();
-  }, [generator, difficulty, startTimer, updateProblem, updateStatus]);
+  }, [generator, difficulty, startTimer, updateGameState, updateProblem, updateStatus]);
 
   const submitAnswer = useCallback(
     (value: number): AnswerResult => {
@@ -74,11 +93,21 @@ export function useGameEngine(
         return 'ignored';
       }
       const isCorrect = value === current.answer;
-      setGameState((prev) => (isCorrect ? onCorrectAnswer(prev) : onWrongAnswer(prev)));
+      const before = gameStateRef.current;
+      const after = isCorrect ? onCorrectAnswer(before) : onWrongAnswer(before);
+      updateGameState(after);
+      answerCountRef.current += 1;
+      setLastAnswer({
+        id: answerCountRef.current,
+        problem: current,
+        chosen: value,
+        result: isCorrect ? 'correct' : 'wrong',
+        points: after.score - before.score,
+      });
       updateProblem(generator(difficulty));
       return isCorrect ? 'correct' : 'wrong';
     },
-    [generator, difficulty, updateProblem]
+    [generator, difficulty, updateGameState, updateProblem]
   );
 
   const pause = useCallback(() => {
@@ -99,6 +128,7 @@ export function useGameEngine(
 
   return {
     problem,
+    lastAnswer,
     score: gameState.score,
     streak: gameState.streak,
     timeLeft,

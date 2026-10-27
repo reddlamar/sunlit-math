@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { Icon } from './icons/Icon';
 import { StatChip } from './StatChip';
+import { useReducedMotion } from './useReducedMotion';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
 import { playStreakSound } from '../audio/sounds';
@@ -17,6 +18,7 @@ type StreakIndicatorProps = {
 export function StreakIndicator({ streak }: StreakIndicatorProps) {
   const { colors } = useSettings();
   const isLit = streak >= LIT_THRESHOLD;
+  const isReduced = useReducedMotion();
   const [pop] = useState(() => new Animated.Value(1));
   const previousStreak = useRef(streak);
 
@@ -30,6 +32,9 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
     }
 
     playStreakSound();
+    if (isReduced) {
+      return;
+    }
     pop.setValue(1);
     Animated.sequence([
       Animated.spring(pop, {
@@ -45,7 +50,7 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [streak, pop]);
+  }, [streak, pop, isReduced]);
 
   const color = isLit ? colors.streak : colors.textSecondary;
 

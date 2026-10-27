@@ -33,6 +33,7 @@ const TOKEN_KEYS: (keyof ColorTokens)[] = [
   'timer',
   'streak',
   'streakSoft',
+  'onStatus',
 ];
 
 describe('theme tokens', () => {
@@ -102,6 +103,15 @@ describe('theme tokens', () => {
     ['dark', dark],
   ])('keeps error text readable (WCAG AA, 4.5:1) on the %s modal surface', (_name, tokens) => {
     expect(contrastRatio(tokens.danger, tokens.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // The revealed answers show a 32 px extra-bold number on these fills: large text, 3:1.
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('keeps text readable (3:1) on the %s success and error fills', (_name, tokens) => {
+    expect(contrastRatio(tokens.onStatus, tokens.success)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(tokens.onStatus, tokens.error)).toBeGreaterThanOrEqual(3);
   });
 
   // The timer and streak numbers are 18-22px bold, which counts as large text (3:1), and
