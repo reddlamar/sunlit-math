@@ -5,8 +5,9 @@ import { useWindowDimensions } from 'react-native';
 import {
   describeLayout,
   layoutClassForWidth,
+  gameArrangement,
   homeArrangement,
-  homeSize,
+  frameSize,
   useLayout,
   useLayoutClass,
 } from './layout';
@@ -109,7 +110,19 @@ describe('homeArrangement', () => {
   });
 });
 
-describe('homeSize', () => {
+describe('gameArrangement', () => {
+  it.each([
+    ['a phone', 390, 844, 'stacked'],
+    ['an iPad in portrait', 820, 1180, 'stacked'],
+    ['a large iPad held upright', 1032, 1376, 'stacked'],
+    ['an iPad in landscape', 1180, 820, 'sidePanel'],
+    ['a phone turned sideways, though it is wide enough to be expanded', 874, 402, 'sideways'],
+  ])('arranges the game for %s', (_name, width, height, expected) => {
+    expect(gameArrangement(describeLayout(width, height))).toBe(expected);
+  });
+});
+
+describe('frameSize', () => {
   it.each([
     ['a phone', 390, 844, 'compact'],
     ['an iPad in portrait', 820, 1180, 'medium'],
@@ -117,7 +130,7 @@ describe('homeSize', () => {
     ['an iPad in landscape', 1180, 820, 'wide'],
     ['a phone turned sideways, however wide it is', 874, 402, 'compact'],
   ])('draws Home for %s at the %s size', (_name, width, height, expected) => {
-    expect(homeSize(describeLayout(width, height))).toBe(expected);
+    expect(frameSize(describeLayout(width, height))).toBe(expected);
   });
 });
 

@@ -1,8 +1,11 @@
 import React, { memo } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { AnswerButton } from './AnswerButton';
 import { choiceColors } from '../theme/tokens';
-import { scaled, useLayout } from '../layout/layout';
+import { frameSize, useLayout } from '../layout/layout';
+
+const GAP = { compact: 16, medium: 20, wide: 20 } as const;
+const ROW_LENGTH = 2;
 
 type AnswerGridProps = {
   choices: number[];
@@ -19,31 +22,34 @@ export const AnswerGrid = memo(function AnswerGrid({
   onAnswer,
   shakeStyle,
 }: AnswerGridProps) {
-  const { scale } = useLayout();
+  const gap = GAP[frameSize(useLayout())];
+  // Two per row, always: four choices never wrap 3+1 on a narrow phone.
+  const rows = [choices.slice(0, ROW_LENGTH), choices.slice(ROW_LENGTH)];
+
   return (
-    <Animated.View
-      testID="answer-grid"
-      style={[styles.choices, { maxWidth: scaled(440, scale) }, shakeStyle]}
-    >
-      {choices.map((choice, index) => (
-        <AnswerButton
-          key={choice}
-          value={choice}
-          color={choiceColors[index % choiceColors.length]}
-          onPress={onAnswer}
-          disabled={disabled}
-        />
+    <Animated.View testID="answer-grid" style={[styles.grid, { gap }, shakeStyle]}>
+      {rows.map((row, rowIndex) => (
+        <View key={rowIndex} style={[styles.row, { gap }]}>
+          {row.map((choice, index) => (
+            <AnswerButton
+              key={choice}
+              value={choice}
+              color={choiceColors[(rowIndex * ROW_LENGTH + index) % choiceColors.length]}
+              onPress={onAnswer}
+              disabled={disabled}
+            />
+          ))}
+        </View>
       ))}
     </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  choices: {
+  grid: {
     width: '100%',
-    paddingHorizontal: 16,
+  },
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
   },
 });

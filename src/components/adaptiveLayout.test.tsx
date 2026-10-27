@@ -16,6 +16,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 
 const PHONE = { width: 390, height: 844 };
 const IPAD_PORTRAIT = { width: 820, height: 1180 };
+const IPAD_LANDSCAPE = { width: 1180, height: 820 };
 const PHONE_LANDSCAPE = { width: 844, height: 390 };
 
 const setWindow = ({ width, height }: { width: number; height: number }) =>
@@ -45,47 +46,50 @@ describe('components adapt to the window', () => {
 
   describe('AnswerButton', () => {
     it.each([
-      ['a phone', PHONE, 96, 32],
-      ['an iPad', IPAD_PORTRAIT, 134.4, 44.8],
+      ['a phone', PHONE, 110, 32],
+      ['an iPad in portrait', IPAD_PORTRAIT, 190, 44],
+      ['an iPad in landscape', IPAD_LANDSCAPE, 150, 44],
       ['a phone turned sideways', PHONE_LANDSCAPE, 72, 32],
-    ])('sizes the answer on %s', async (_name, window, minHeight, fontSize) => {
+    ])('sizes the answer on %s', async (_name, window, height, fontSize) => {
       setWindow(window);
       const { getByRole, getByTestId } = await render(
         <AnswerButton value={12} onPress={jest.fn()} />
       );
-      expect(getByRole('button')).toHaveStyle({ minHeight });
+      expect(getByRole('button')).toHaveStyle({ height });
       expect(getByTestId('answer-choice')).toHaveStyle({ fontSize });
     });
   });
 
   describe('AnswerGrid', () => {
     it.each([
-      ['a phone', PHONE, 440],
-      ['an iPad', IPAD_PORTRAIT, 616],
-    ])('limits the board width on %s', async (_name, window, maxWidth) => {
+      ['a phone', PHONE, 16],
+      ['an iPad', IPAD_PORTRAIT, 20],
+    ])('spaces the answers on %s', async (_name, window, gap) => {
       setWindow(window);
       const { getByTestId } = await render(
         <AnswerGrid choices={[1, 2, 3, 4]} disabled={false} onAnswer={jest.fn()} shakeStyle={{}} />
       );
-      expect(getByTestId('answer-grid')).toHaveStyle({ maxWidth });
+      expect(getByTestId('answer-grid')).toHaveStyle({ gap });
     });
   });
 
   describe('TimerBar', () => {
     it.each([
-      ['a phone', PHONE, 16, 22],
-      ['an iPad', IPAD_PORTRAIT, 22.4, 30.8],
-    ])('sizes the bar and seconds on %s', async (_name, window, trackHeight, secondsSize) => {
+      ['a phone', PHONE, 24, 16],
+      ['an iPad in portrait', IPAD_PORTRAIT, 32, 16],
+      ['an iPad in landscape', IPAD_LANDSCAPE, 32, 18],
+      ['a phone turned sideways', PHONE_LANDSCAPE, 16, 16],
+    ])('sizes the bar and the words on %s', async (_name, window, trackHeight, wordsSize) => {
       setWindow(window);
       const { getByTestId, getByText } = await render(
         <SettingsProvider>
           <TimerBar timeLeft={30000} duration={60000} />
         </SettingsProvider>
       );
-      expect(getByTestId('timer-bar-track')).toHaveStyle({
+      expect(getByTestId('timer-bar-track', { includeHiddenElements: true })).toHaveStyle({
         height: trackHeight,
       });
-      expect(getByText('30')).toHaveStyle({ fontSize: secondsSize });
+      expect(getByText('30 seconds left')).toHaveStyle({ fontSize: wordsSize });
     });
   });
 

@@ -11,7 +11,7 @@ import { getTopScores } from '../storage/scoresRepository';
 import { isOperationLocked } from '../purchases/entitlements';
 import { usePurchase } from '../purchases/PurchaseContext';
 import { useSettings } from '../settings/SettingsContext';
-import { homeArrangement, homeSize, READABLE_MAX_WIDTH, useLayout } from '../layout/layout';
+import { homeArrangement, frameSize, READABLE_MAX_WIDTH, useLayout } from '../layout/layout';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Operation, ScoreEntry } from '../types/game';
 
@@ -58,7 +58,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const tiles = (
     <OperationGrid
       arrangement={arrangement}
-      size={homeSize(layout)}
+      size={frameSize(layout)}
       isLocked={isLocked}
       onSelect={handleSelectOperation}
     />

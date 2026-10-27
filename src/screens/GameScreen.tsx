@@ -4,8 +4,11 @@ import { usePreventRemove } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../components/AnimatedPressable';
 import { AnswerGrid } from '../components/AnswerGrid';
-import { TimerBar } from '../components/TimerBar';
+import { IconButton } from '../components/IconButton';
+import { QuestionCard } from '../components/QuestionCard';
+import { StatChip } from '../components/StatChip';
 import { StreakIndicator } from '../components/StreakIndicator';
+import { TimerBar } from '../components/TimerBar';
 import { NameEntryModal } from '../components/NameEntryModal';
 import { RoundSummary } from '../components/RoundSummary';
 import { GetReadyModal } from '../components/GetReadyModal';
@@ -13,9 +16,9 @@ import { useShake } from '../components/useShake';
 import { playCorrectSound, playWrongSound } from '../audio/sounds';
 import { useGameEngine } from '../game/useGameEngine';
 import { useSettings } from '../settings/SettingsContext';
+import { Icon } from '../components/icons/Icon';
 import { fontFamily, operationColors, staticColors } from '../theme/tokens';
-import { cardShadow } from '../theme/shadow';
-import { scaled, useLayout } from '../layout/layout';
+import { frameSize, gameArrangement, READABLE_MAX_WIDTH, useLayout } from '../layout/layout';
 import type { GameScreenProps } from '../navigation/types';
 import type { ScoreEntry } from '../types/game';
 
@@ -26,9 +29,8 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   const [savedEntry, setSavedEntry] = useState<ScoreEntry | null>(null);
   const [isGetReadyVisible, setIsGetReadyVisible] = useState(true);
   const { shake, shakeStyle } = useShake();
-  const { isLandscape, isShort, contentWidth, scale } = useLayout();
-  // Play controls grow on tablets; never below 48 dp on a phone.
-  const controlSize = scale > 1 ? 56 : 48;
+  const layout = useLayout();
+  const arrangement = gameArrangement(layout);
 
   const { submitAnswer, pause } = engine;
   const isRoundInProgress = engine.status === 'playing' || engine.status === 'paused';
@@ -120,104 +122,114 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
     );
   }
 
+  const controls = (
+    <View style={styles.controls}>
+      {engine.status === 'playing' && (
+        <IconButton testID="pause-button" icon="pause" label="Pause game" onPress={engine.pause} />
+      )}
+      {isRoundInProgress && (
+        <IconButton
+          testID="restart-button"
+          icon="restart"
+          label="Restart game"
+          onPress={handleRestartPress}
+        />
+      )}
+    </View>
+  );
+  const score = (
+    <StatChip>
+      <Text testID="score-value" style={[styles.score, { color: colors.textPrimary }]}>
+        {`Score ${engine.score}`}
+      </Text>
+    </StatChip>
+  );
+  const streak = <StreakIndicator streak={engine.streak} />;
+  const timer = <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />;
+
+  const isSideways = arrangement === 'sideways';
+  const isPaused = engine.status === 'paused';
+  const playArea = engine.problem && (
+    <View
+      testID="problem-area"
+      style={[
+        styles.playArea,
+        isPaused && styles.playAreaPaused,
+        isSideways && styles.playAreaSideways,
+        arrangement === 'sidePanel' && styles.playAreaSidePanel,
+      ]}
+    >
+      {isPaused ? (
+        <View style={styles.paused}>
+          <Icon name="pause" size={56} color={colors.textPrimary} />
+          <Text style={[styles.pausedTitle, { color: colors.textPrimary }]}>Paused</Text>
+          <AnimatedPressable
+            testID="resume-button"
+            accessibilityRole="button"
+            style={[styles.primaryButton, { backgroundColor: operationColors[operation] }]}
+            onPress={engine.resume}
+          >
+            <Text style={styles.primaryButtonLabel}>Resume</Text>
+          </AnimatedPressable>
+        </View>
+      ) : (
+        <>
+          <QuestionCard
+            question={engine.problem.question}
+            fontSize={isSideways ? SIDEWAYS_QUESTION_SIZE : undefined}
+            style={
+              arrangement === 'stacked'
+                ? { minHeight: QUESTION_MIN_HEIGHT[frameSize(layout)] }
+                : styles.questionFills
+            }
+          />
+          <View style={isSideways && styles.answersSideways}>
+            <AnswerGrid
+              choices={engine.problem.choices}
+              disabled={engine.status !== 'playing'}
+              onAnswer={handleAnswer}
+              shakeStyle={shakeStyle}
+            />
+          </View>
+        </>
+      )}
+    </View>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View
-        testID="top-bar"
-        style={[
-          styles.topBar,
-          isShort && styles.topBarShort,
-          !isLandscape && { maxWidth: contentWidth },
-        ]}
-      >
-        <View style={isShort && styles.timerShort}>
-          <TimerBar timeLeft={engine.timeLeft} duration={engine.duration} />
-        </View>
-        <View style={[styles.statsRow, isShort && styles.statsRowShort]}>
-          <Text
-            testID="score-value"
-            style={[
-              styles.score,
-              {
-                color: operationColors[operation],
-                fontSize: scaled(26, scale),
-              },
-            ]}
-          >
-            {engine.score}
-          </Text>
-          <View style={styles.controls}>
-            {isRoundInProgress && (
-              <AnimatedPressable
-                testID="restart-button"
-                accessibilityRole="button"
-                accessibilityLabel="Restart game"
-                wrapperStyle={styles.controlButtonWrapper}
-                style={[styles.controlButton, styles.restartButton, controlStyle(controlSize)]}
-                onPress={handleRestartPress}
-              >
-                <Text style={styles.controlIcon}>↻</Text>
-              </AnimatedPressable>
-            )}
-            {engine.status === 'playing' && (
-              <AnimatedPressable
-                testID="pause-button"
-                accessibilityRole="button"
-                accessibilityLabel="Pause game"
-                style={[
-                  styles.controlButton,
-                  { backgroundColor: operationColors[operation] },
-                  controlStyle(controlSize),
-                ]}
-                onPress={engine.pause}
-              >
-                <Text style={styles.controlIcon}>⏸</Text>
-              </AnimatedPressable>
-            )}
+      {arrangement === 'sidePanel' && (
+        <View style={styles.panes}>
+          <View testID="top-bar" style={styles.sidePanel}>
+            {controls}
+            {score}
+            {streak}
+            {timer}
           </View>
-          <StreakIndicator streak={engine.streak} />
+          {playArea}
         </View>
-      </View>
-
-      {engine.problem && (
-        <View
-          testID="problem-area"
-          style={[styles.problemArea, isLandscape && styles.problemAreaLandscape]}
-        >
-          {engine.status === 'paused' ? (
-            <View>
-              <Text style={styles.pausedEmoji}>⏸</Text>
-              <Text style={[styles.pausedTitle, { color: colors.textPrimary }]}>Paused</Text>
-              <AnimatedPressable
-                testID="resume-button"
-                accessibilityRole="button"
-                wrapperStyle={styles.primaryButtonWrapper}
-                style={[styles.primaryButton, { backgroundColor: operationColors[operation] }]}
-                onPress={engine.resume}
-              >
-                <Text style={styles.primaryButtonLabel}>Resume</Text>
-              </AnimatedPressable>
-            </View>
-          ) : (
-            <>
-              <Text
-                testID="problem-question"
-                style={[
-                  styles.question,
-                  { color: colors.textPrimary, fontSize: scaled(44, scale) },
-                  isLandscape && styles.questionLandscape,
-                ]}
-              >
-                {engine.problem.question}
-              </Text>
-              <AnswerGrid
-                choices={engine.problem.choices}
-                disabled={engine.status !== 'playing'}
-                onAnswer={handleAnswer}
-                shakeStyle={shakeStyle}
-              />
-            </>
-          )}
+      )}
+      {arrangement === 'sideways' && (
+        <View style={styles.sidewaysScreen}>
+          <View testID="top-bar" style={styles.sidewaysBar}>
+            <View style={styles.sidewaysTimer}>{timer}</View>
+            {controls}
+            {score}
+            {streak}
+          </View>
+          {playArea}
+        </View>
+      )}
+      {arrangement === 'stacked' && (
+        <View testID="game-column" style={styles.column}>
+          <View testID="top-bar" style={styles.topBar}>
+            {controls}
+            {score}
+            <View style={styles.spacer} />
+            {streak}
+          </View>
+          {timer}
+          {playArea}
         </View>
       )}
 
@@ -239,106 +251,112 @@ export function GameScreen({ navigation, route }: GameScreenProps) {
   );
 }
 
-const controlStyle = (size: number) => ({
-  width: size,
-  height: size,
-  borderRadius: size / 2,
-});
+const SIDEWAYS_QUESTION_SIZE = 48;
+/** How tall the question card is in the column; the wide layout lets it fill instead. */
+const QUESTION_MIN_HEIGHT = { compact: 132, medium: 260, wide: 0 } as const;
+const SCREEN_PADDING = 20;
+const SECTION_GAP = 20;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBar: {
-    width: '100%',
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  // A phone turned sideways has about 360 dp of height, so the timer, score and
-  // controls share one row instead of stacking.
-  topBarShort: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timerShort: {
+  // Upright: one readable column, with the answers pushed down to the thumbs.
+  column: {
     flex: 1,
-    marginRight: 16,
+    width: '100%',
+    maxWidth: READABLE_MAX_WIDTH + SCREEN_PADDING * 2,
+    alignSelf: 'center',
+    gap: SECTION_GAP,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
-  statsRowShort: {
-    marginTop: 0,
-    columnGap: 16,
-  },
-  statsRow: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  score: {
-    fontSize: 26,
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
+    gap: 12,
   },
   controls: {
     flexDirection: 'row',
+    gap: 12,
   },
-  controlButtonWrapper: {
-    marginRight: 18,
-  },
-  controlButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...cardShadow({ elevation: 3, opacity: 0.15, radius: 4 }),
-  },
-  restartButton: {
-    backgroundColor: staticColors.neutralControl,
-  },
-  controlIcon: {
-    fontSize: 18,
-    color: staticColors.onColor,
-  },
-  problemArea: {
+  spacer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  // Sideways, the question and the answers sit side by side so the board never
-  // has to squeeze into the little height a phone has.
-  problemAreaLandscape: {
+  score: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: fontFamily.bold,
+  },
+  // A wide window held sideways: stats on the left, the question and answers on the right.
+  panes: {
+    flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 24,
+    gap: 48,
+    paddingHorizontal: 48,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
-  pausedEmoji: {
-    fontSize: 56,
-    textAlign: 'center',
-    marginBottom: 8,
+  sidePanel: {
+    width: 260,
+    alignItems: 'flex-start',
+    gap: SECTION_GAP,
+  },
+  // A phone turned sideways has about 360 dp of height, so the timer and stats share a row
+  // and the question sits beside the answers.
+  sidewaysScreen: {
+    flex: 1,
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  sidewaysBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  sidewaysTimer: {
+    flex: 1,
+  },
+  playArea: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  playAreaPaused: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playAreaSidePanel: {
+    gap: 24,
+  },
+  playAreaSideways: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+  },
+  answersSideways: {
+    flex: 1,
+  },
+  // In the wide and sideways layouts the card takes whatever room the answers leave.
+  questionFills: {
+    flex: 1,
+  },
+  paused: {
+    alignItems: 'center',
+    gap: 8,
   },
   pausedTitle: {
     fontSize: 28,
     fontWeight: '800',
     fontFamily: fontFamily.extraBold,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  question: {
-    fontWeight: '800',
-    fontFamily: fontFamily.extraBold,
-    marginBottom: 24,
-  },
-  questionLandscape: {
-    flex: 1,
-    textAlign: 'center',
-    marginBottom: 0,
-  },
-  primaryButtonWrapper: {
     marginBottom: 16,
   },
   primaryButton: {
     borderRadius: 24,
     paddingVertical: 16,
     paddingHorizontal: 40,
-    ...cardShadow({ elevation: 6, opacity: 0.18, radius: 8 }),
   },
   primaryButtonLabel: {
     color: staticColors.onColor,

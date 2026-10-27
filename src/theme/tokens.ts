@@ -9,8 +9,14 @@ export const fontFamily = {
 
 /** Corner radii shared by cards, tiles and answer buttons. */
 export const radius = {
-  lg: 22,
+  lg: 24,
   xl: 32,
+} as const;
+
+/** Smallest tap targets: 48 dp anywhere, 56 dp for controls a child uses during play. */
+export const touchTarget = {
+  min: 48,
+  play: 56,
 } as const;
 
 // Every button fill below carries white text, so each one keeps at least 3:1 contrast

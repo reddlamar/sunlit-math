@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
+import { Icon } from './icons/Icon';
+import { StatChip } from './StatChip';
 import { useSettings } from '../settings/SettingsContext';
 import { fontFamily } from '../theme/tokens';
 import { playStreakSound } from '../audio/sounds';
-import { scaled, useLayout } from '../layout/layout';
 
 const LIT_THRESHOLD = 3;
 const MILESTONE_INTERVAL = 3;
+const FLAME_SIZE = 20;
 
 type StreakIndicatorProps = {
   streak: number;
@@ -14,7 +16,6 @@ type StreakIndicatorProps = {
 
 export function StreakIndicator({ streak }: StreakIndicatorProps) {
   const { colors } = useSettings();
-  const { scale } = useLayout();
   const isLit = streak >= LIT_THRESHOLD;
   const [pop] = useState(() => new Animated.Value(1));
   const previousStreak = useRef(streak);
@@ -46,56 +47,30 @@ export function StreakIndicator({ streak }: StreakIndicatorProps) {
     ]).start();
   }, [streak, pop]);
 
+  const color = isLit ? colors.streak : colors.textSecondary;
+
   return (
-    <View
-      testID="streak-container"
-      style={[styles.container, isLit && { backgroundColor: colors.streakSoft }]}
-    >
-      <Animated.Text
+    <StatChip testID="streak-container" warm={isLit}>
+      <Animated.View
         testID="streak-flame"
         accessibilityState={{ selected: isLit }}
-        style={[
-          styles.flame,
-          isLit && styles.flameLit,
-          {
-            fontSize: scaled(isLit ? 26 : 20, scale),
-            transform: [{ scale: pop }],
-          },
-        ]}
+        style={[!isLit && styles.unlit, { transform: [{ scale: pop }] }]}
       >
-        🔥
-      </Animated.Text>
-      <Text
-        style={[
-          styles.count,
-          {
-            color: isLit ? colors.streak : colors.textPrimary,
-            fontSize: scaled(18, scale),
-          },
-        ]}
-      >
+        <Icon name="flame" size={FLAME_SIZE} color={color} />
+      </Animated.View>
+      <Text style={[styles.count, { color: isLit ? colors.streak : colors.textPrimary }]}>
         {streak}
       </Text>
-    </View>
+    </StatChip>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 16,
-  },
-  flame: {
-    opacity: 0.3,
-  },
-  flameLit: {
-    opacity: 1,
+  unlit: {
+    opacity: 0.4,
   },
   count: {
-    marginLeft: 6,
+    fontSize: 20,
     fontWeight: '700',
     fontFamily: fontFamily.bold,
   },

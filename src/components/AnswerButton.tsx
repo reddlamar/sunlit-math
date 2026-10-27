@@ -3,7 +3,12 @@ import { StyleSheet, Text } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { cardShadow } from '../theme/shadow';
 import { fontFamily, staticColors, choiceColors, radius } from '../theme/tokens';
-import { scaled, useLayout } from '../layout/layout';
+import { frameSize, useLayout, type FrameSize } from '../layout/layout';
+
+const HEIGHT: Record<FrameSize, number> = { compact: 110, medium: 190, wide: 150 };
+const FONT_SIZE: Record<FrameSize, number> = { compact: 32, medium: 44, wide: 44 };
+/** A phone turned sideways has little height, so the board stays compact there. */
+const SHORT_HEIGHT = 72;
 
 type AnswerButtonProps = {
   value: number;
@@ -18,7 +23,8 @@ export const AnswerButton = memo(function AnswerButton({
   disabled,
   color = choiceColors[0],
 }: AnswerButtonProps) {
-  const { scale, isShort } = useLayout();
+  const layout = useLayout();
+  const size = frameSize(layout);
   return (
     <AnimatedPressable
       accessibilityRole="button"
@@ -28,12 +34,11 @@ export const AnswerButton = memo(function AnswerButton({
       wrapperStyle={styles.wrapper}
       style={[
         styles.button,
-        // A phone turned sideways has little height, so the board stays compact there.
-        { backgroundColor: color, minHeight: isShort ? 72 : scaled(96, scale) },
+        { backgroundColor: color, height: layout.isShort ? SHORT_HEIGHT : HEIGHT[size] },
         disabled && styles.disabled,
       ]}
     >
-      <Text testID="answer-choice" style={[styles.label, { fontSize: scaled(32, scale) }]}>
+      <Text testID="answer-choice" style={[styles.label, { fontSize: FONT_SIZE[size] }]}>
         {value}
       </Text>
     </AnimatedPressable>
@@ -41,11 +46,8 @@ export const AnswerButton = memo(function AnswerButton({
 });
 
 const styles = StyleSheet.create({
-  // Two per row, always: the grid is a fixed 2x2 so four choices never wrap 3+1
-  // on narrower phones.
   wrapper: {
-    width: '50%',
-    padding: 8,
+    flex: 1,
   },
   button: {
     borderRadius: radius.lg,
